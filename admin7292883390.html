@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIKA PANEL — Admin Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --brand: #6366f1;
+            --bg-dark: #070708;
+            --card-bg: rgba(17, 17, 20, 0.95);
+            --text-main: #ffffff;
+            --text-dim: #94a3b8;
+            --green: #10b981;
+            --red: #ef4444;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.85)), url('https://i.ibb.co.com/ymMgzjjQ/3a8d2a531fd9a32c02655b65ee244fe9.jpg');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: #0f0f12;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+            left: -280px;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar.active { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.9); }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+        }
+
+        .overlay.active { display: block; }
+
+        .nav-group { display: flex; flex-direction: column; gap: 8px; margin-top: 30px; }
+
+        .side-btn {
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-family: inherit;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: 0.2s;
+        }
+
+        .side-btn:hover, .side-btn.active { background: var(--brand); color: white; }
+
+        .top-nav {
+            position: sticky;
+            top: 0;
+            padding: 20px 30px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 900;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .menu-toggle {
+            font-size: 22px;
+            cursor: pointer;
+            color: white;
+            background: rgba(255,255,255,0.05);
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .container { padding: 30px; max-width: 900px; margin: 0 auto; }
+        .card { background: var(--card-bg); backdrop-filter: blur(10px); padding: 25px; border-radius: 24px; border: 1px solid var(--border); margin-bottom: 25px; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid var(--border); border-top: 4px solid var(--brand); }
+        .stat-card h4 { font-size: 28px; margin: 5px 0; }
+        .stat-card p { font-size: 11px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; }
+
+        input, select, textarea {
+            width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 14px; color: white; margin-top: 8px; font-family: inherit; outline: none;
+        }
+
+        input:focus { border-color: var(--brand); }
+        .input-group { margin-bottom: 20px; }
+        label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; }
+
+        button.primary {
+            width: 100%; padding: 16px; background: var(--brand); color: white; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.3s;
+        }
+
+        button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .img-preview { width: 100%; height: 200px; object-fit: cover; border-radius: 16px; margin-top: 10px; display: none; border: 1px solid var(--border); }
+
+        #toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: white; color: black; padding: 12px 25px; border-radius: 50px; font-weight: 700; transition: 0.4s; z-index: 2000;
+        }
+
+        #toast.active { transform: translateX(-50%) translateY(0); }
+
+        .category-box { display: none; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 18px; margin-top: 10px; border: 1px dashed var(--border); }
+        .category-box.active { display: block; }
+
+        .stok-card { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 15px; }
+        .stok-img { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+    <div id="toast">Berhasil!</div>
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div style="font-size: 20px; font-weight: 800; color: var(--brand); display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-bolt"></i> DIKA PANEL
+        </div>
+        <div class="nav-group">
+            <button class="side-btn active" onclick="sw('dash', this)"><i class="fas fa-home"></i> Dashboard</button>
+            <button class="side-btn" onclick="sw('prod', this)"><i class="fas fa-plus-circle"></i> Tambah Produk</button>
+            <button class="side-btn" onclick="sw('stok', this)"><i class="fas fa-boxes"></i> Kelola Stok</button>
+            <button class="side-btn" onclick="sw('vouch', this)"><i class="fas fa-ticket"></i> Voucher</button>
+            <button class="side-btn" onclick="sw('testi', this)"><i class="fas fa-star"></i> Testimoni</button>
+            <button class="side-btn" onclick="sw('req', this)"><i class="fas fa-clock"></i> Request User</button>
+        </div>
+        <button class="side-btn" onclick="logout()" style="margin-top: auto; color: var(--red);"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+
+    <div class="top-nav">
+        <div class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></div>
+        <div style="font-weight: 800; font-size: 18px;" id="header-title">Dashboard</div>
+        <div style="width: 45px;"></div>
+    </div>
+
+    <div class="container">
+        <div id="view-dash">
+            <div class="stats-grid">
+                <div class="stat-card"><p>Total Users</p><h4 id="s-user">0</h4></div>
+                <div class="stat-card"><p>Produk Ready</p><h4 id="s-prod">0</h4></div>
+                <div class="stat-card"><p>Request Pending</p><h4 id="s-req">0</h4></div>
+            </div>
+            <div class="card">
+                <h3>Aktivitas Terakhir</h3>
+                <div id="recent-orders" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+
+        <div id="view-prod" style="display:none">
+            <div class="card">
+                <h3>Input Produk Baru</h3>
+                <div class="input-group">
+                    <label>Pilih Kategori</label>
+                    <select id="p-cat" onchange="changeCat(this.value)">
+                        <option value="AKUN">AKUN</option>
+                        <option value="ITEM">ITEM</option>
+                        <option value="JASA">JASA</option>
+                    </select>
+                </div>
+
+                <div id="box-akun" class="category-box active">
+                    <div class="input-group"><label>Nama Game</label><input type="text" id="a-name"></div>
+                    <div class="input-group"><label>Harga</label><input type="number" id="a-price"></div>
+                    <div class="input-group"><label>Deskripsi Akun</label><textarea id="a-desc" rows="3"></textarea></div>
+                    <div class="input-group"><label>Login Via</label><select id="a-login"><option>MOONTON</option><option>GOOGLE</option><option>FACEBOOK</option><option>TIKTOK</option></select></div>
+                    <div class="input-group"><label>Email</label><input type="text" id="a-email"></div>
+                    <div class="input-group"><label>Password</label><input type="text" id="a-pw"></div>
+                </div>
+
+                <div id="box-item" class="category-box">
+                    <div class="input-group"><label>Nama Item</label><input type="text" id="i-name"></div>
+                    <div class="input-group"><label>Harga</label><input type="number" id="i-price"></div>
+                    <div class="input-group"><label>Stok</label><input type="number" id="i-stok"></div>
+                    <div class="input-group"><label>Link</label><input type="text" id="i-link"></div>
+                </div>
+
+                <div id="box-jasa" class="category-box">
+                    <div class="input-group"><label>Jasa</label><input type="text" id="j-name"></div>
+                    <div class="input-group"><label>Harga</label><input type="number" id="j-price"></div>
+                    <div class="input-group"><label>Nomor Seller (WA)</label><input type="number" id="j-wa"></div>
+                </div>
+
+                <div class="input-group">
+                    <label>Upload Gambar Produk</label>
+                    <input type="file" id="p-file" accept="image/*" onchange="preImg(this, 'p-pre')">
+                    <img id="p-pre" class="img-preview">
+                </div>
+
+                <button class="primary" id="btn-p" onclick="addProd()">POST KE KATALOG</button>
+            </div>
+        </div>
+
+        <div id="view-stok" style="display:none">
+            <div id="stok-list"></div>
+        </div>
+
+        <div id="view-vouch" style="display:none">
+            <div class="card">
+                <h3>Buat Voucher</h3>
+                <div class="input-group"><label>Kode</label><input type="text" id="v-code"></div>
+                <div class="input-group"><label>Nominal</label><input type="number" id="v-val"></div>
+                <button class="primary" onclick="addVouch()">GENERATE</button>
+            </div>
+            <div id="vouch-list"></div>
+        </div>
+
+        <div id="view-testi" style="display:none">
+            <div class="card">
+                <h3>Post Testimoni</h3>
+                <div class="input-group"><label>Nama Buyer</label><input type="text" id="t-user"></div>
+                <div class="input-group"><label>Pesan</label><textarea id="t-msg"></textarea></div>
+                <div class="input-group"><label>Foto Bukti</label><input type="file" id="t-file" accept="image/*" onchange="preImg(this, 't-pre')"><img id="t-pre" class="img-preview"></div>
+                <button class="primary" id="btn-t" onclick="addTesti()">POST TESTI</button>
+            </div>
+            <div id="adm-testi-list"></div>
+        </div>
+
+        <div id="view-req" style="display:none">
+            <div id="req-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const _s = supabase.createClient('https://pmoqjgovghxibdcxpqql.supabase.co', 'sb_publishable_eXCMrrASbuEqLkNzjAMT5A_SM5GQRH6');
+
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        }
+
+        function changeCat(cat) {
+            document.querySelectorAll('.category-box').forEach(b => b.classList.remove('active'));
+            if(cat === 'AKUN') document.getElementById('box-akun').classList.add('active');
+            if(cat === 'ITEM') document.getElementById('box-item').classList.add('active');
+            if(cat === 'JASA') document.getElementById('box-jasa').classList.add('active');
+        }
+
+        function msg(t) {
+            const toast = document.getElementById('toast');
+            toast.innerText = t;
+            toast.classList.add('active');
+            setTimeout(() => toast.classList.remove('active'), 3000);
+        }
+
+        function preImg(input, preId) {
+            const pre = document.getElementById(preId);
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => { pre.src = e.target.result; pre.style.display = 'block'; };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+       async function upImg(file, folder) {
+    try {
+        const fileName = Date.now() + "_" + file.name.replace(/\s/g, '_');
+        const path = `${folder}/${fileName}`;
+        const { data, error } = await _s.storage.from('images').upload(path, file);
+        
+        if (error) {
+            console.error("Storage Error:", error);
+            return null;
+        }
+        
+        const { data: urlData } = _s.storage.from('images').getPublicUrl(path);
+        return urlData.publicUrl;
+    } catch (e) {
+        console.error("Upload Catch:", e);
+        return null;
+    }
+}
+
+        async function addProd() {
+            const btn = document.getElementById('btn-p');
+            const cat = document.getElementById('p-cat').value;
+            const file = document.getElementById('p-file').files[0];
+            let name, price, info;
+
+            if(cat === 'AKUN') {
+                name = document.getElementById('a-name').value;
+                price = document.getElementById('a-price').value;
+                info = `DESKRIPSI : ${document.getElementById('a-desc').value}\nLOGIN : ${document.getElementById('a-login').value}\nEMAIL : ${document.getElementById('a-email').value}\nPW : ${document.getElementById('a-pw').value}`;
+            } else if(cat === 'ITEM') {
+                name = document.getElementById('i-name').value;
+                price = document.getElementById('i-price').value;
+                info = `STOK : ${document.getElementById('i-stok').value}\nLINK : ${document.getElementById('i-link').value}`;
+            } else {
+                name = document.getElementById('j-name').value;
+                price = document.getElementById('j-price').value;
+                info = `WA SELLER : ${document.getElementById('j-wa').value}`;
+            }
+
+            if(!name || !price || !file) return msg("Lengkapi data & foto!");
+
+            btn.innerText = 'Uploading...'; btn.disabled = true;
+            const imgUrl = await upImg(file, 'products');
+            
+            if(!imgUrl) {
+                btn.innerText = 'POST KE KATALOG'; btn.disabled = false;
+                return msg("Gagal upload foto!");
+            }
+
+            const { error } = await _s.from('products').insert([{ 
+                name: name, category: cat, price: parseInt(price), payment_info: info, image_url: imgUrl, status: 'READY' 
+            }]);
+
+            if(!error) { msg("Berhasil Masuk Katalog!"); location.reload(); }
+        }
+
+        async function loadStok() {
+            const box = document.getElementById('stok-list');
+            const { data } = await _s.from('products').select('*').order('id', { ascending: false });
+            let h = '';
+            data?.forEach(p => {
+                h += `<div class="card">
+                    <div class="stok-card">
+                        <img src="${p.image_url}" class="stok-img" onerror="this.src='https://via.placeholder.com/60'">
+                        <div style="flex:1">
+                            <div style="font-weight:800;">${p.name}</div>
+                            <div style="font-size:10px; color:var(--brand)">${p.category}</div>
+                        </div>
+                        <span style="font-size:10px; padding:4px 10px; background:rgba(255,255,255,0.05); border-radius:8px;">${p.status}</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div class="input-group"><label>Harga</label><input type="number" value="${p.price}" id="ep-${p.id}"></div>
+                        <div class="input-group"><label>Status</label><select id="es-${p.id}"><option value="READY" ${p.status === 'READY' ? 'selected' : ''}>READY</option><option value="SOLD" ${p.status === 'SOLD' ? 'selected' : ''}>SOLD</option></select></div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="updateStok(${p.id})" style="flex:1; background:var(--green); border:none; color:white; padding:12px; border-radius:12px; font-weight:700; cursor:pointer;">SIMPAN</button>
+                        <button onclick="delStok(${p.id})" style="background:var(--red); border:none; color:white; padding:12px; border-radius:12px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            });
+            box.innerHTML = h || 'Katalog kosong.';
+        }
+
+        async function updateStok(id) {
+            const p = document.getElementById('ep-'+id).value, s = document.getElementById('es-'+id).value;
+            await _s.from('products').update({ price: parseInt(p), status: s }).eq('id', id);
+            msg("Update Berhasil!"); loadStok();
+        }
+
+        async function delStok(id) { if(confirm("Hapus produk ini?")) { await _s.from('products').delete().eq('id', id); loadStok(); } }
+
+        function sw(v, btn) {
+            document.querySelectorAll('[id^="view-"]').forEach(el => el.style.display = 'none');
+            document.getElementById('view-' + v).style.display = 'block';
+            document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('header-title').innerText = btn.innerText;
+            if(window.innerWidth < 800) toggleMenu();
+            if(v === 'stok') loadStok();
+            if(v === 'vouch') loadVouchers();
+            if(v === 'testi') loadAdmTesti();
+            if(v === 'req') loadReqs();
+            if(v === 'dash') load();
+        }
+
+        async function load() {
+            const { data: users } = await _s.from('profiles').select('*');
+            const { data: prods } = await _s.from('products').select('*');
+            const { data: reqs } = await _s.from('request_jual').select('*').eq('status', 'PENDING');
+            const { data: orders } = await _s.from('orders').select('*').order('id', { ascending: false }).limit(5);
+            document.getElementById('s-user').innerText = users?.length || 0;
+            document.getElementById('s-prod').innerText = prods?.length || 0;
+            document.getElementById('s-req').innerText = reqs?.length || 0;
+            let h = '';
+            orders?.forEach(o => { h += `<div style="padding:12px; background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:10px; font-size:12px;"><b>${o.user_email}</b> membeli <b>${o.product_name}</b></div>`; });
+            document.getElementById('recent-orders').innerHTML = h || 'Belum ada data.';
+        }
+
+        async function addVouch() {
+            const c = document.getElementById('v-code').value.toUpperCase(), v = document.getElementById('v-val').value;
+            await _s.from('redeem_codes').insert([{ code: c, value: parseInt(v), is_used: false }]);
+            msg("Voucher Dibuat!"); loadVouchers();
+        }
+
+        async function loadVouchers() {
+            const { data } = await _s.from('redeem_codes').select('*').order('id', { ascending: false });
+            let h = '';
+            data?.forEach(v => { h += `<div class="card" style="padding:15px; margin-bottom:10px; display:flex; justify-content:space-between;"><span><b>${v.code}</b> (Rp ${v.value})</span><small>${v.is_used ? 'OFF' : 'ON'}</small></div>`; });
+            document.getElementById('vouch-list').innerHTML = h;
+        }
+
+        async function addTesti() {
+            const btn = document.getElementById('btn-t');
+            const n = document.getElementById('t-user').value, m = document.getElementById('t-msg').value, f = document.getElementById('t-file').files[0];
+            btn.innerText = 'Posting...'; btn.disabled = true;
+            let imgUrl = f ? await upImg(f, 'testis') : null;
+            await _s.from('testimonis').insert([{ nama_buyer: n, pesan: m, image_url: imgUrl }]);
+            msg("Testimoni Post!"); location.reload();
+        }
+
+        async function loadAdmTesti() {
+            const { data } = await _s.from('testimonis').select('*').order('id', { ascending: false });
+            let h = '';
+            data?.forEach(t => { h += `<div class="card" style="padding:15px;"><b>${t.nama_buyer}</b>: ${t.pesan} <i class="fas fa-trash" style="float:right; color:var(--red);" onclick="delTesti(${t.id})"></i></div>`; });
+            document.getElementById('adm-testi-list').innerHTML = h;
+        }
+
+        async function delTesti(id) { await _s.from('testimonis').delete().eq('id', id); loadAdmTesti(); }
+
+        async function loadReqs() {
+            const { data } = await _s.from('request_jual').select('*').order('id', { ascending: false });
+            let h = '';
+            data?.forEach(r => {
+                h += `<div class="card">
+                    <b>${r.nama_game}</b> (${r.status})<br><small>${r.user_email}</small>
+                    <p style="margin:10px 0; font-size:12px; opacity:0.7;">${r.deskripsi}</p>
+                    ${r.image_url ? `<img src="${r.image_url}" style="width:100%; border-radius:12px; margin-bottom:10px;">` : ''}
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="hReq(${r.id}, 'DONE')" style="flex:1; background:var(--green); border:none; padding:10px; border-radius:10px; color:white; font-weight:700;">ACC</button>
+                        <button onclick="hReq(${r.id}, 'REJECTED')" style="flex:1; background:var(--red); border:none; padding:10px; border-radius:10px; color:white; font-weight:700;">TOLAK</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('req-list').innerHTML = h || 'Tidak ada request.';
+        }
+
+        async function hReq(id, a) { await _s.from('request_jual').update({ status: a }).eq('id', id); msg("Diproses!"); loadReqs(); }
+        function logout() { localStorage.clear(); location.href = '../index.html'; }
+        load();
+    </script>
+</body>
+</html>
