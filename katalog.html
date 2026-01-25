@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAPAK DIKA</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+    .side-title {
+    font-size: 10px;
+    font-weight: 800;
+    color: #555;
+    margin: 25px 0 10px 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    display: block;
+}
+.side-btn {
+    width: 100%;
+    padding: 14px 18px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(76, 201, 240, 0.1);
+    border-radius: 15px;
+    color: white;
+    margin-bottom: 8px;
+    text-align: left;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: 0.3s;
+}
+.side-btn i {
+    color: var(--aksen);
+    width: 20px;
+    text-align: center;
+}
+.side-btn:hover {
+    background: var(--aksen);
+    color: #000;
+}
+.side-btn:hover i {
+    color: #000;
+}
+        :root { 
+            --brand: #6366f1; 
+            --brand-glow: rgba(99, 102, 241, 0.3);
+            --bg: #070708; 
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-dim: #94a3b8;
+            --green: #10b981;
+            --red: #ef4444;
+            --gold: #f59e0b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg);
+            color: white;
+            background-image: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #070708 70%);
+            min-height: 100vh;
+        }
+        .navbar {
+            position: sticky; top: 0; z-index: 1000;
+            padding: 15px 20px;
+            background: rgba(7, 7, 8, 0.8);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo { font-weight: 800; font-size: 20px; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+        .logo i { color: var(--brand); font-size: 24px; }
+        .balance-pill {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid var(--brand);
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-weight: 800;
+            font-size: 14px;
+            color: var(--brand);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .container { padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .search-bar {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 16px 20px;
+            border-radius: 20px;
+            color: white;
+            font-family: inherit;
+            font-weight: 600;
+            outline: none;
+            margin-bottom: 20px;
+        }
+        .filter-scroll {
+            display: flex; gap: 10px; overflow-x: auto;
+            padding-bottom: 10px; margin-bottom: 20px;
+            scrollbar-width: none;
+        }
+        .filter-btn {
+            padding: 10px 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            font-size: 12px; font-weight: 700;
+            white-space: nowrap; cursor: pointer; color: var(--text-dim);
+        }
+        .filter-btn.active { background: var(--brand); color: white; border-color: var(--brand); box-shadow: 0 4px 15px var(--brand-glow); }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 16px;
+        }
+        .product-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 10px;
+            transition: 0.3s;
+        }
+        .img-wrapper { position: relative; width: 100%; height: 140px; overflow: hidden; border-radius: 18px; margin-bottom: 12px; }
+        .product-img { width: 100%; height: 100%; object-fit: cover; }
+        .price-tag {
+            position: absolute; bottom: 8px; right: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            padding: 4px 10px; border-radius: 10px;
+            font-size: 11px; font-weight: 800; color: var(--brand);
+        }
+        .card-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-top: 5px; }
+        .btn-card { padding: 10px; border-radius: 12px; border: none; font-weight: 800; font-size: 10px; cursor: pointer; }
+        .btn-det-small { background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); }
+        .btn-buy-small { background: var(--brand); color: white; }
+        .sidebar {
+            position: fixed; top: 0; left: -300px; width: 280px; height: 100%;
+            background: #0f0f12; z-index: 2000; transition: 0.4s;
+            padding: 30px 20px; border-right: 1px solid var(--border);
+        }
+        .sidebar.active { left: 0; }
+        .side-btn {
+            width: 100%; padding: 14px; background: transparent; border: none;
+            color: var(--text-dim); font-weight: 700; text-align: left;
+            cursor: pointer; display: flex; align-items: center; gap: 12px;
+            border-radius: 12px;
+        }
+        .side-btn i { width: 20px; color: var(--brand); }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: none; z-index: 1500; }
+        .modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #141417; padding: 25px; border-radius: 28px;
+            width: 92%; max-width: 400px; z-index: 3000; display: none;
+            border: 1px solid var(--border); max-height: 85vh; overflow-y: auto;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 18px; font-weight: 800; color: white; }
+        .detail-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 15px;
+            border: 1px solid var(--border);
+        }
+        .detail-row {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-icon {
+            width: 32px; height: 32px; background: rgba(99, 102, 241, 0.1);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            color: var(--brand); font-size: 14px; flex-shrink: 0;
+        }
+        .detail-info b { display: block; font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+        .detail-info span { font-size: 13px; font-weight: 600; color: white; line-height: 1.4; }
+        input, textarea {
+            width: 100%; padding: 14px; background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border); border-radius: 15px;
+            color: white; margin-top: 10px; font-family: inherit;
+        }
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+        #toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: white; color: black; padding: 12px 25px; border-radius: 50px;
+            font-weight: 800; font-size: 13px; z-index: 9999; transition: 0.4s;
+        }
+        #toast.active { transform: translateX(-50%) translateY(0); }
+        @media (max-width: 480px) { .product-grid { grid-template-columns: 1fr 1fr; gap: 12px; } }
+    </style>
+</head>
+<body>
+
+    <div id="toast">Berhasil!</div>
+    <div class="overlay" id="ov" onclick="cls()"></div>
+
+<div class="sidebar" id="side">
+    <div class="logo" style="margin-bottom: 30px; font-size: 22px; font-weight: 800; color: var(--aksen);">
+        <i class="fas fa-bolt"></i> LAPAK DIKA
+    </div>
+
+    <div id="adm-menu"></div>
+
+    <span class="side-title">Main Service</span>
+    <button class="side-btn" onclick="location.href='otp.html'">
+        <i class="fas fa-mobile-alt"></i> Beli Nomor v1
+    </button>
+    <button class="side-btn" onclick="location.href='otp2.html'">
+        <i class="fas fa-mobile-alt"></i> Beli Nomor v2
+    </button>
+    <button class="side-btn" onclick="openMod('req')">
+        <i class="fas fa-upload"></i> Jasa Post
+    </button>
+
+    <span class="side-title">Tools | Features</span>
+    <button class="side-btn" onclick="openMod('calc')">
+        <i class="fas fa-calculator"></i> Kalkulator
+    </button>
+    <button class="side-btn" onclick="openMod('red')">
+        <i class="fas fa-ticket-alt"></i> Redeem Kode
+    </button>
+
+    <span class="side-title">Social | Ranking</span>
+    <button class="side-btn" onclick="openMod('testi')">
+        <i class="fas fa-star"></i> Testimoni
+    </button>
+    <button class="side-btn" onclick="openMod('top')">
+        <i class="fas fa-crown"></i> Top Sultan
+    </button>
+
+    <span class="side-title">Account</span>
+    <button class="side-btn" onclick="logout()" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.2);">
+        <i class="fas fa-power-off" style="color: #ff4d4d;"></i> Keluar
+    </button>
+</div>
+
+    <nav class="navbar">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <i class="fas fa-bars-staggered" style="font-size:20px; cursor:pointer;" onclick="toggleSide()"></i>
+            <div class="logo"><span>LAPAK</span><span style="color:var(--brand)">DIKA</span></div>
+        </div>
+        <div class="balance-pill"><i class="fas fa-wallet"></i><span id="u-bal">Rp 0</span></div>
+    </nav>
+
+    <div class="container">
+        <input type="text" class="search-bar" id="searchInput" placeholder="Cari item..." oninput="search()">
+        <div class="filter-scroll">
+            <div class="filter-btn active" onclick="filterCat('ALL', this)">🔥 SEMUA</div>
+            <div class="filter-btn" onclick="filterCat('AKUN', this)">🎮 AKUN</div>
+            <div class="filter-btn" onclick="filterCat('ITEM', this)">💎 ITEM</div>
+            <div class="filter-btn" onclick="filterCat('JASA', this)">⚡ JASA</div>
+            <div class="filter-btn" onclick="swHistory()" id="btn-his">📜 RIWAYAT</div>
+        </div>
+        <div class="product-grid" id="product-list"></div>
+    </div>
+
+    <div class="modal" id="m-detail">
+        <div class="modal-header">
+            <div class="modal-title">Detail Produk</div>
+            <i class="fas fa-times" onclick="cls()" style="cursor:pointer; opacity:0.5;"></i>
+        </div>
+        <div class="detail-card">
+            <div class="detail-row">
+                <div class="detail-icon"><i class="fas fa-tag"></i></div>
+                <div class="detail-info"><b id="det-label-name">NAMA PRODUK</b><span id="det-name">...</span></div>
+            </div>
+            <div id="det-specs"></div>
+        </div>
+        <button class="btn-card btn-buy-small" onclick="cls()" style="width:100%; padding:15px; margin-top:20px; font-size:12px;">TUTUP DETAIL</button>
+    </div>
+
+    <div class="modal" id="m-red">
+        <h3>REDEEM KODE</h3>
+        <input type="text" id="red-code" placeholder="Masukkan Kode Voucher">
+        <button class="btn-card btn-buy-small" style="margin-top:20px; padding:15px; width:100%;" onclick="redeem()">TUKAR SALDO</button>
+    </div>
+
+    <div class="modal" id="m-req">
+        <h3>AJUKAN JASA POST</h3>
+        <input type="text" id="r-game" placeholder="Nama Game">
+        <input type="number" id="r-price" placeholder="Harga Jual">
+        <input type="text" id="r-wa" placeholder="Nomor WhatsApp">
+        <textarea id="r-desc" placeholder="Deskripsi Singkat"></textarea>
+        <b style="display:block; margin-top:15px; font-size:12px; color:var(--text-dim);">UPLOAD FOTO PRODUK:</b>
+        <input type="file" id="r-img" accept="image/*">
+        <button class="btn-card btn-buy-small" style="margin-top:20px; padding:15px; width:100%;" onclick="sendReq()">KIRIM REQUEST</button>
+    </div>
+
+    <div class="modal" id="m-calc">
+        <h3>KALKULATOR</h3>
+        <input type="text" id="calc-display" readonly style="text-align:right; font-size:20px;">
+        <div class="calc-grid">
+            <button class="btn-card btn-det-small" onclick="calcIn('7')">7</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('8')">8</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('9')">9</button>
+            <button class="btn-card btn-buy-small" style="background:var(--red)" onclick="calcClear()">C</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('4')">4</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('5')">5</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('6')">6</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('/')">/</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('1')">1</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('2')">2</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('3')">3</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('*')">x</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('0')">0</button>
+            <button class="btn-card btn-buy-small" onclick="calcRes()">=</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('+')">+</button>
+            <button class="btn-card btn-det-small" onclick="calcIn('-')">-</button>
+        </div>
+    </div>
+
+    <div class="modal" id="m-testi"><h3>TESTIMONI BUYER</h3><div id="testi-list" style="margin-top:15px;"></div></div>
+    <div class="modal" id="m-top"><h3>🏆 TOP SULTAN</h3><div id="top-list" style="margin-top:15px;"></div></div>
+
+    <script>
+        const _s = supabase.createClient('https://pmoqjgovghxibdcxpqql.supabase.co', 'sb_publishable_eXCMrrASbuEqLkNzjAMT5A_SM5GQRH6');
+        const mail = localStorage.getItem('userEmail');
+        let allProducts = [], userBalance = 0, currentCat = 'ALL', viewMode = 'kat';
+
+        function msg(t) {
+            const toast = document.getElementById('toast');
+            toast.innerText = t; toast.classList.add('active');
+            setTimeout(() => toast.classList.remove('active'), 3000);
+        }
+
+        function toggleSide() { 
+            document.getElementById('side').classList.toggle('active'); 
+            document.getElementById('ov').style.display = document.getElementById('side').classList.contains('active') ? 'block' : 'none';
+        }
+
+        function cls() { 
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
+            document.getElementById('side').classList.remove('active');
+            document.getElementById('ov').style.display = 'none';
+        }
+
+        function openMod(id) { cls(); document.getElementById('m-'+id).style.display = 'block'; document.getElementById('ov').style.display = 'block'; if(id==='testi') loadTesti(); if(id==='top') loadTop(); }
+
+        async function loadData() {
+            const { data: p } = await _s.from('products').select('*').eq('status', 'READY').order('id', { ascending: false });
+            allProducts = p || [];
+            renderProducts(allProducts);
+            const { data: u } = await _s.from('profiles').select('balance').eq('email', mail).single();
+            if(u) {
+                userBalance = u.balance;
+                document.getElementById('u-bal').innerText = `Rp ${userBalance.toLocaleString()}`;
+            }
+        }
+
+   function renderProducts(items) {
+    const list = document.getElementById('product-list');
+    list.innerHTML = items.map(p => {
+        let actionButtons = '';
+        
+        if (p.category === 'JASA') {
+            const waMatch = p.payment_info.match(/WA SELLER\s*:\s*(\d+)/i);
+            const waNumber = waMatch ? waMatch[1] : '';
+            actionButtons = `
+                <button class="btn-card btn-det-small" onclick="opDetail(${p.id})">INFO</button>
+                <a href="https://wa.me/${waNumber}" target="_blank" style="text-decoration:none; display:block;">
+                    <button class="btn-card btn-buy-small" style="background:#25d366; width:100%;">CHAT SELLER</button>
+                </a>
+            `;
+        } else {
+            actionButtons = `
+                <button class="btn-card btn-det-small" onclick="opDetail(${p.id})">INFO</button>
+                <button class="btn-card btn-buy-small" onclick="buy(${p.id}, ${p.price}, '${p.name.replace(/'/g, "\\'")}')">BELI</button>
+            `;
+        }
+
+        return `
+            <div class="product-card">
+                <div class="img-wrapper">
+                    <img src="${p.image_url}" class="product-img">
+                    <div class="price-tag">Rp ${p.price.toLocaleString()}</div>
+                </div>
+                <div style="font-size:11px; font-weight:700; margin-bottom:10px; height:30px; overflow:hidden;">${p.name}</div>
+                <div class="card-actions">
+                    ${actionButtons}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+        function opDetail(id) {
+            const p = allProducts.find(x => x.id === id);
+            if(!p) return;
+            document.getElementById('det-name').innerText = p.name;
+            let specsHtml = `
+                <div class="detail-row">
+                    <div class="detail-icon"><i class="fas fa-layer-group"></i></div>
+                    <div class="detail-info"><b>KATEGORI</b><span>${p.category || 'REGULER'}</span></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-icon"><i class="fas fa-coins"></i></div>
+                    <div class="detail-info"><b>HARGA</b><span>Rp ${p.price.toLocaleString()}</span></div>
+                </div>
+            `;
+            p.payment_info.split('\n').forEach(line => {
+                const l = line.toLowerCase();
+                if(!l.includes('email') && !l.includes('pw') && !l.includes('password') && line.trim()) {
+                    specsHtml += `
+                        <div class="detail-row">
+                            <div class="detail-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="detail-info"><b>INFO TAMBAHAN</b><span>${line}</span></div>
+                        </div>
+                    `;
+                }
+            });
+            document.getElementById('det-specs').innerHTML = specsHtml;
+            openMod('detail');
+        }
+
+        async function buy(id, price, name) {
+            if(userBalance < price) return msg("Saldo tidak cukup!");
+            if(!confirm(`Beli ${name}?`)) return;
+            const { data: prod } = await _s.from('products').select('*').eq('id', id).single();
+            await _s.from('profiles').update({ balance: userBalance - price }).eq('email', mail);
+            await _s.from('products').update({ status: 'SOLD' }).eq('id', id);
+            await _s.from('orders').insert([{ user_email: mail, product_name: name, price: price, secure_data: prod.payment_info }]);
+            msg("Berhasil! Cek Riwayat.");
+            setTimeout(() => location.reload(), 1500);
+        }
+
+        function swHistory() {
+            viewMode = viewMode === 'kat' ? 'his' : 'kat';
+            document.getElementById('btn-his').classList.toggle('active');
+            if(viewMode === 'his') loadHistory(); else renderProducts(allProducts);
+        }
+
+        async function loadHistory() {
+            const { data } = await _s.from('orders').select('*').eq('user_email', mail).order('id', { ascending: false });
+            document.getElementById('product-list').innerHTML = (data || []).map(o => `
+                <div style="background:var(--card-bg); padding:15px; border-radius:20px; border-left:4px solid var(--brand); grid-column: 1/-1;">
+                    <div style="font-size:10px; color:var(--text-dim);">${o.created_at.split('T')[0]}</div>
+                    <b style="display:block; margin:5px 0; font-size:14px;">${o.product_name}</b>
+                    <div style="background:rgba(0,0,0,0.3); padding:12px; border-radius:12px; font-size:12px; color:var(--green); font-family:monospace; margin-top:10px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        ${o.secure_data.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `).join('') || '<p style="grid-column:1/-1; text-align:center; opacity:0.5; padding:50px;">Belum ada transaksi.</p>';
+        }
+
+        async function redeem() {
+            const code = document.getElementById('red-code').value;
+            const { data: rc } = await _s.from('redeem_codes').select('*').eq('code', code).eq('is_used', false).single();
+            if(!rc) return msg("Kode salah atau sudah digunakan!");
+            await _s.from('profiles').update({ balance: userBalance + rc.value }).eq('email', mail);
+            await _s.from('redeem_codes').update({ is_used: true, used_by: mail }).eq('id', rc.id);
+            msg("Saldo berhasil ditambahkan!"); location.reload();
+        }
+
+        async function sendReq() {
+            const g = document.getElementById('r-game').value, p = document.getElementById('r-price').value, w = document.getElementById('r-wa').value, d = document.getElementById('r-desc').value, f = document.getElementById('r-img').files[0];
+            if(!g || !p || !w) return msg("Mohon lengkapi data!");
+            let imgUrl = "";
+            if(f) {
+                const fn = Date.now() + "_" + f.name;
+                const { data: up } = await _s.storage.from('product-images').upload(fn, f);
+                if(up) { const { data: pub } = _s.storage.from('product-images').getPublicUrl(fn); imgUrl = pub.publicUrl; }
+            }
+            await _s.from('request_jual').insert([{ user_email: mail, nama_game: g, harga: parseInt(p), wa_pembeli: w, deskripsi: d, status: 'PENDING', image_url: imgUrl }]);
+            msg("Permintaan terkirim!"); cls();
+        }
+
+        async function loadTesti() {
+            const { data } = await _s.from('testimonis').select('*').order('id', { ascending: false });
+            document.getElementById('testi-list').innerHTML = data.map(t => `
+                <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:15px; margin-bottom:10px; border: 1px solid var(--border);">
+                    <b style="color:var(--gold); font-size:12px;">★ ${t.nama_buyer}</b>
+                    <p style="font-size:13px; margin-top:5px; opacity:0.8;">${t.pesan}</p>
+                </div>
+            `).join('');
+        }
+
+        async function loadTop() {
+            const { data } = await _s.from('orders').select('user_email, price');
+            const stats = (data || []).reduce((acc, c) => { const n = c.user_email.split('@')[0]; acc[n] = (acc[n] || 0) + c.price; return acc; }, {});
+            const sorted = Object.entries(stats).sort((a,b) => b[1]-a[1]).slice(0,5);
+            document.getElementById('top-list').innerHTML = sorted.map(([n, p], i) => `
+                <div style="padding:15px; background:rgba(255,255,255,0.05); margin-bottom:10px; border-radius:15px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--border);">
+                    <span><span style="color:var(--brand); font-weight:800; margin-right:10px;">#${i+1}</span><b>${n}</b></span> 
+                    <span style="color:var(--green); font-weight:800;">Rp ${p.toLocaleString()}</span>
+                </div>
+            `).join('');
+        }
+
+        function calcIn(v) { document.getElementById('calc-display').value += v; }
+        function calcClear() { document.getElementById('calc-display').value = ''; }
+        function calcRes() { try { document.getElementById('calc-display').value = eval(document.getElementById('calc-display').value); } catch { calcClear(); } }
+        function filterCat(cat, el) { currentCat = cat; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); el.classList.add('active'); search(); }
+        function search() {
+            const v = document.getElementById('searchInput').value.toLowerCase();
+            let f = allProducts;
+            if(currentCat !== 'ALL') f = f.filter(p => (p.category || 'AKUN') === currentCat);
+            if(v) f = f.filter(p => p.name.toLowerCase().includes(v));
+            renderProducts(f);
+        }
+        async function checkAdmin() {
+            const { data } = await _s.from('profiles').select('role').eq('email', mail).single();
+            if(data?.role === 'admin') document.getElementById('adm-menu').innerHTML = `<button class="side-btn" onclick="location.href='admin7292883390.html'"><i class="fas fa-user-shield"></i> LAPAK DIKA</button>`;
+        }
+        function logout() { localStorage.clear(); location.href = 'index.html'; }
+        loadData(); checkAdmin();
+    </script>
+</body>
+</html>
