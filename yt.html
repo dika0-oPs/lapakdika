@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIKA STREAM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --aksen: #ff0000; 
+            --bg: #0f0f0f;
+            --glass: rgba(15, 15, 15, 0.98);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: white; overflow-x: hidden; }
+
+        .sticky-player {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--glass);
+            width: 100%;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .video-container { width: 100%; aspect-ratio: 16 / 9; background: black; }
+
+        .player-actions {
+            display: flex;
+            gap: 10px;
+            padding: 10px 15px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .player-actions::-webkit-scrollbar { display: none; }
+        .act-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .search-box { padding: 12px 15px; display: flex; gap: 10px; }
+        .search-box input {
+            flex: 1;
+            background: #222;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 10px;
+            color: white;
+            outline: none;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px;
+            padding: 15px;
+        }
+
+        @media (min-width: 768px) {
+            .grid-container { grid-template-columns: repeat(5, 1fr); }
+        }
+
+        .video-card { cursor: pointer; transition: 0.2s; }
+        .video-card:active { transform: scale(0.95); }
+
+        .thumb { 
+            width: 100%; 
+            aspect-ratio: 16/9; 
+            border-radius: 12px; 
+            background: #222; 
+            overflow: hidden; 
+            position: relative;
+        }
+        .thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        .v-info { padding: 8px 2px; }
+        .v-info h3 { 
+            font-size: 11px; 
+            line-height: 1.4; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+            overflow: hidden; 
+            font-weight: 600;
+        }
+        .v-info p { font-size: 10px; color: #888; margin-top: 4px; }
+
+        #loader-bot { text-align: center; padding: 40px; color: var(--aksen); display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="sticky-player">
+        <div id="player-sec" style="display: none;">
+            <div class="video-container" id="player-frame"></div>
+            <div class="player-actions">
+                <a id="dl-mp3" class="act-btn" target="_blank"><i class="fas fa-music"></i> MP3</a>
+                <a id="dl-mp4" class="act-btn" target="_blank"><i class="fas fa-video"></i> MP4</a>
+                <button class="act-btn" onclick="shareVideo()"><i class="fas fa-share"></i> Share</button>
+                <button class="act-btn" onclick="toggleTheater()"><i class="fas fa-expand"></i> Theater</button>
+            </div>
+        </div>
+        <div class="search-box">
+            <input type="text" id="input-q" placeholder="Cari video...">
+            <button onclick="newSearch()" style="background:var(--aksen); border:none; width:45px; border-radius:10px; color:white;"><i class="fas fa-search"></i></button>
+        </div>
+    </div>
+
+    <div class="grid-container" id="video-grid"></div>
+    <div id="loader-bot"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
+
+    <script>
+        const API_KEY = "AIzaSyAYiWXe0wgnMVpcMzHzxzwpR1CtWPzkJGc";
+        let nextToken = "";
+        let currentQuery = "trending indonesia";
+        let isFetching = false;
+        let currentId = "";
+
+        async function fetchVideos(isNew = false) {
+            if (isFetching) return;
+            isFetching = true;
+            document.getElementById('loader-bot').style.display = "block";
+
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${currentQuery}&type=video&key=${API_KEY}&pageToken=${isNew ? '' : nextToken}`;
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                nextToken = data.nextPageToken || "";
+                render(data.items, isNew);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                isFetching = false;
+                document.getElementById('loader-bot').style.display = "none";
+            }
+        }
+
+        function newSearch() {
+            const q = document.getElementById('input-q').value;
+            if (!q) return;
+            currentQuery = q;
+            fetchVideos(true);
+        }
+
+        function render(items, isNew) {
+            const grid = document.getElementById('video-grid');
+            if (isNew) {
+                grid.innerHTML = '';
+                window.scrollTo({top: 0});
+            }
+
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'video-card';
+                div.onclick = () => play(item.id.videoId);
+                div.innerHTML = `
+                    <div class="thumb"><img src="${item.snippet.thumbnails.medium.url}"></div>
+                    <div class="v-info">
+                        <h3>${item.snippet.title}</h3>
+                        <p>${item.snippet.channelTitle}</p>
+                    </div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function play(id) {
+            currentId = id;
+            document.getElementById('player-sec').style.display = "block";
+            document.getElementById('player-frame').innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${id}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+            
+            document.getElementById('dl-mp3').href = `https://p.oceansaver.in/api/download.php?url=https://www.youtube.com/watch?v=${id}&format=mp3`;
+            document.getElementById('dl-mp4').href = `https://p.oceansaver.in/api/download.php?url=https://www.youtube.com/watch?v=${id}&format=mp4`;
+            
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function shareVideo() {
+            if(!currentId) return;
+            const url = `https://youtu.be/${currentId}`;
+            if (navigator.share) {
+                navigator.share({ title: 'Nonton Yuk!', url: url });
+            } else {
+                window.open(`https://api.whatsapp.com/send?text=${url}`);
+            }
+        }
+
+        function toggleTheater() {
+            const frame = document.querySelector('.video-container');
+            frame.style.aspectRatio = frame.style.aspectRatio === '21 / 9' ? '16 / 9' : '21 / 9';
+        }
+
+        window.onscroll = () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+                if (nextToken) fetchVideos();
+            }
+        };
+
+        document.getElementById('input-q').addEventListener('keypress', (e) => { if(e.key === 'Enter') newSearch(); });
+        
+        fetchVideos(true);
+    </script>
+</body>
+</html>
