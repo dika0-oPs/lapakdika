@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIKA PANEL V2 — MAINTENANCE</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --aksen: #4cc9f0; 
+            --bg: #050506;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg);
+            color: white;
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bg-frame {
+            position: fixed; inset: 0;
+            background-image: url('https://i.ibb.co.com/ymMgzjjQ/3a8d2a531fd9a32c02655b65ee244fe9.jpg');
+            background-size: cover;
+            background-position: center;
+            z-index: -2;
+            transform: scale(1.1);
+        }
+
+        .bg-overlay {
+            position: fixed; inset: 0;
+            background: radial-gradient(circle at center, rgba(0,0,0,0.4) 0%, #050506 100%);
+            z-index: -1;
+        }
+
+        .particles {
+            position: fixed; inset: 0;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .dev-card {
+            background: rgba(10, 10, 12, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            padding: 50px 30px;
+            border-radius: 40px;
+            text-align: center;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            animation: slideIn 1s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .status-tag {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(76, 201, 240, 0.15);
+            padding: 8px 18px; border-radius: 100px;
+            font-size: 10px; font-weight: 800; color: var(--aksen);
+            margin-bottom: 30px; border: 1px solid rgba(76, 201, 240, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .dot { width: 6px; height: 6px; background: var(--aksen); border-radius: 50%; animation: blink 1s infinite; box-shadow: 0 0 10px var(--aksen); }
+
+        .icon-dev {
+            font-size: 50px;
+            color: white;
+            margin-bottom: 25px;
+            text-shadow: 0 0 20px var(--aksen);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        h1 {
+            font-size: 22px; font-weight: 800; line-height: 1.4;
+            margin-bottom: 15px; text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        p {
+            font-size: 14px; color: #94a3b8; line-height: 1.7;
+            margin-bottom: 35px; padding: 0 10px;
+        }
+
+        .btn-home {
+            width: 100%; padding: 20px;
+            background: white; color: black;
+            border: none; border-radius: 20px;
+            font-weight: 800; font-size: 14px;
+            cursor: pointer; transition: 0.4s;
+            text-transform: uppercase;
+        }
+
+        .btn-home:hover {
+            background: var(--aksen);
+            box-shadow: 0 10px 30px rgba(76, 201, 240, 0.4);
+            transform: translateY(-5px);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .part {
+            position: absolute;
+            background: var(--aksen);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: move linear infinite;
+        }
+
+        @keyframes move {
+            from { transform: translateY(100vh); }
+            to { transform: translateY(-10vh); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-frame"></div>
+    <div class="bg-overlay"></div>
+    <div class="particles" id="part-container"></div>
+
+    <div class="dev-card">
+        <div class="status-tag">
+            <span class="dot"></span>
+            SYSTEM OPTIMIZING
+        </div>
+
+        <div class="icon-dev">
+            <i class="fas fa-microchip"></i>
+        </div>
+
+        <h1>WEB INI MASIH DALAM PROSES PENGEMBANGAN</h1>
+        
+        <p>
+            Kami sedang meningkatkan sistem keamanan dan kecepatan transaksi pada database V2. Harap di tunggu update nya.
+        </p>
+
+        <button class="btn-home" onclick="location.href='index.html'">
+            KEMBALI KE BERANDA
+        </button>
+
+        <div style="margin-top: 30px; font-size: 9px; color: #555; font-weight: 800; letter-spacing: 3px; text-transform: uppercase;">
+            Encrypted by Dika Dev
+        </div>
+    </div>
+
+    <script>
+        function createParticles() {
+            const container = document.getElementById('part-container');
+            for (let i = 0; i < 20; i++) {
+                const part = document.createElement('div');
+                part.className = 'part';
+                const size = Math.random() * 4 + 2;
+                part.style.width = size + 'px';
+                part.style.height = size + 'px';
+                part.style.left = Math.random() * 100 + 'vw';
+                part.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                part.style.opacity = Math.random() * 0.5;
+                container.appendChild(part);
+            }
+        }
+        createParticles();
+    </script>
+</body>
+</html>
