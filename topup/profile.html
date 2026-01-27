@@ -108,7 +108,7 @@
         async function loadProfile() {
             const container = document.getElementById('app');
             try {
-                const response = await fetch('../js/profile.js');
+                const response = await fetch('/api/profile');
                 const res = await response.json();
 
                 if (res.success) {
