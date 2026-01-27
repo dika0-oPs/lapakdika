@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dika Store - Halaman utama</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --brand: #4318FF; 
+            --green: #05CD99; 
+            --red: #EE5D50;
+            --blue: #00D1FF;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            margin: 0; 
+            min-height: 100vh;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center; 
+            color: white;
+            background: 
+                linear-gradient(rgba(11, 14, 20, 0.8), rgba(11, 14, 20, 0.95)),
+                url('https://i.ibb.co.com/ymMgzjjQ/3a8d2a531fd9a32c02655b65ee244fe9.jpg');
+            background-size: cover; 
+            background-position: center;
+            background-attachment: fixed;
+            padding: 20px;
+        }
+
+        .welcome-card {
+            text-align: center;
+            margin-bottom: 30px;
+            max-width: 500px;
+            animation: slideDown 0.8s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .welcome-card h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .welcome-card p {
+            opacity: 0.8;
+            font-size: 14px;
+            line-height: 1.6;
+            font-weight: 700;
+        }
+
+        .login-box { 
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            padding: 40px; 
+            border-radius: 35px; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            width: 100%; 
+            max-width: 400px; 
+            text-align: center; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            animation: fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            margin-bottom: 30px;
+            display: inline-block;
+        }
+
+        .logo span { color: var(--brand); }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.3);
+            font-size: 14px;
+        }
+
+        input { 
+            width: 100%; 
+            padding: 16px 16px 16px 50px; 
+            border-radius: 16px; 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            color: white; 
+            outline: none; 
+            font-family: inherit;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--brand);
+            background: rgba(255,255,255,0.1);
+            box-shadow: 0 0 15px rgba(67, 24, 255, 0.2);
+        }
+
+        button { 
+            width: 100%; 
+            padding: 16px; 
+            border-radius: 16px; 
+            background: var(--brand); 
+            color: white; 
+            border: none; 
+            font-weight: 800; 
+            cursor: pointer; 
+            margin-top: 10px; 
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(67, 24, 255, 0.4);
+        }
+
+        .toggle-link { 
+            margin-top: 25px; 
+            font-size: 13px; 
+            opacity: 0.6; 
+            cursor: pointer; 
+            display: block; 
+            transition: 0.2s;
+        }
+
+        .toggle-link b { color: var(--brand); }
+        .toggle-link:hover { opacity: 1; }
+
+        #toast { 
+            position: fixed; 
+            top: 25px; 
+            left: 50%; 
+            transform: translateX(-50%) translateY(-150px); 
+            background: #141822; 
+            padding: 15px 25px; 
+            border-radius: 20px; 
+            border: 1px solid var(--brand); 
+            z-index: 9999; 
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+        }
+
+        #toast.active { transform: translateX(-50%) translateY(0); }
+        #toast i { font-size: 18px; }
+    </style>
+</head>
+<body>
+
+    <div id="toast">
+        <i id="t-icon"></i> 
+        <span id="t-msg" style="font-weight: 800; font-size: 14px;"></span>
+    </div>
+
+    <div class="welcome-card">
+        <h1>SELAMAT DATANG DI <span style="color: var(--brand);">LAPAK DIKA</span></h1>
+        <p>DIKA MENYEDIAKAN BERBAGAI JASA DAN AKUN DENGAN HARGA TERJANGKAU. SILAHKAN LOGIN ATAU DAFTAR UNTUK MASUK KE WEBSITE TERIMAKASIH.</p>
+    </div>
+
+    <div class="login-box" id="l-form">
+        <div class="logo">LAPAK<span>DIKA</span></div>
+        <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="l-email" placeholder="Alamat Email">
+        </div>
+        <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="l-pass" placeholder="Password">
+        </div>
+        <button onclick="login()">MASUK SEKARANG</button>
+        <span class="toggle-link" onclick="sw('r')">
+            Belum punya akun? <b>Daftar Sekarang</b>
+        </span>
+    </div>
+
+    <div class="login-box" id="r-form" style="display:none">
+        <div class="logo">DAFTAR<span>AKUN</span></div>
+        <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" id="r-name" placeholder="Nama Lengkap">
+        </div>
+        <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="r-email" placeholder="Email Aktif">
+        </div>
+        <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="r-pass" placeholder="Password">
+        </div>
+        <button style="background:var(--green)" onclick="reg()">BUAT AKUN BARU</button>
+        <span class="toggle-link" onclick="sw('l')">
+            Sudah punya akun? <b>Login Saja</b>
+        </span>
+    </div>
+
+    <script>
+        const _s = supabase.createClient(
+            'https://pmoqjgovghxibdcxpqql.supabase.co', 
+            'sb_publishable_eXCMrrASbuEqLkNzjAMT5A_SM5GQRH6'
+        )
+
+        function showMsg(text, type = "success") {
+            const t = document.getElementById('toast');
+            const icon = document.getElementById('t-icon');
+            const msg = document.getElementById('t-msg');
+            
+            msg.innerText = text;
+            t.style.borderColor = type === "success" ? "var(--green)" : "var(--red)";
+            icon.className = type === "success" ? "fas fa-check-circle" : "fas fa-exclamation-circle";
+            icon.style.color = type === "success" ? "var(--green)" : "var(--red)";
+            
+            t.classList.add('active');
+            setTimeout(() => t.classList.remove('active'), 3000);
+        }
+
+        function sw(t) {
+            document.getElementById('l-form').style.display = t === 'r' ? 'none' : 'block';
+            document.getElementById('r-form').style.display = t === 'r' ? 'block' : 'none';
+        }
+
+        async function login() {
+            const e = document.getElementById('l-email').value;
+            const p = document.getElementById('l-pass').value;
+
+            if(!e || !p) return showMsg("Lengkapi form login!", "error");
+
+            if(e === 'admin@dika.com' && p === 'admin123') {
+                showMsg("Selamat Datang Admin!");
+                localStorage.setItem('userEmail', e);
+                localStorage.setItem('isAdmin', 'true');
+                setTimeout(() => location.href = 'admin/admin.html', 1500);
+                return;
+            }
+
+            const { data, error } = await _s
+                .from('profiles')
+                .select('*')
+                .eq('email', e)
+                .eq('password', p)
+                .single();
+
+            if (data) {
+                showMsg("Berhasil Masuk! Memuat data...");
+                localStorage.setItem('userEmail', data.email);
+                localStorage.setItem('isAdmin', 'false');
+                setTimeout(() => location.href = 'user/katalog.html', 1500);
+            } else {
+                showMsg("Email atau Password salah!", "error");
+            }
+        }
+
+        async function reg() {
+            const n = document.getElementById('r-name').value;
+            const e = document.getElementById('r-email').value;
+            const p = document.getElementById('r-pass').value;
+
+            if(!n || !e || !p) return showMsg("Isi semua data pendaftaran!", "error");
+
+            const { error } = await _s
+                .from('profiles')
+                .insert([{ nama: n, email: e, password: p, balance: 0 }]);
+
+            if(error) {
+                showMsg("Gagal daftar! Email mungkin sudah ada.", "error");
+            } else {
+                showMsg("Akun Berhasil Dibuat!");
+                setTimeout(() => sw('l'), 2000);
+            }
+        }
+    </script>
+
+</body>
+</html>
