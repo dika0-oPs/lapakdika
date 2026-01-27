@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROFILE USER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --aksen: #4cc9f0; 
+            --bg: #070708; 
+            --card: rgba(255, 255, 255, 0.03); 
+            --border: rgba(255, 255, 255, 0.08); 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            color: white; 
+            display: flex; 
+            justify-content: center; 
+            min-height: 100vh;
+            padding-top: 50px; 
+        }
+
+        .profile-card { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            width: 90%; 
+            max-width: 380px; 
+            border-radius: 24px; 
+            padding: 25px; 
+            text-align: center;
+            height: fit-content;
+        }
+
+        .avatar { 
+            width: 90px; 
+            height: 90px; 
+            border-radius: 50%; 
+            border: 2px solid var(--aksen); 
+            margin-bottom: 15px; 
+            object-fit: cover;
+        }
+
+        .name { font-size: 18px; font-weight: 800; margin-bottom: 5px; }
+
+        .user-tag { 
+            color: var(--aksen); 
+            font-size: 13px; 
+            margin-bottom: 20px; 
+            display: block; 
+        }
+
+        .balance-box { 
+            background: rgba(76, 201, 240, 0.1); 
+            border: 1px solid var(--aksen); 
+            padding: 15px; 
+            border-radius: 18px; 
+            margin-bottom: 20px; 
+        }
+
+        .balance-box small { 
+            display: block; 
+            font-size: 10px; 
+            color: var(--aksen); 
+            text-transform: uppercase; 
+            margin-bottom: 5px; 
+        }
+
+        .balance-box b { font-size: 22px; }
+
+        .info-row { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 12px 0; 
+            border-bottom: 1px solid var(--border); 
+            font-size: 13px; 
+        }
+
+        .info-row span { color: #666; }
+
+        .loading { 
+            padding: 40px; 
+            color: #555; 
+            font-size: 14px;
+        }
+
+        .btn-back {
+            display: inline-block;
+            margin-top: 20px;
+            color: #555;
+            text-decoration: none;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <div class="loading">MENYAMBUNGKAN KE SERVER...</div>
+    </div>
+
+    <script>
+        async function loadProfile() {
+            const container = document.getElementById('app');
+            try {
+                const response = await fetch('../js/profile.js');
+                const res = await response.json();
+
+                if (res.success) {
+                    const u = res.user;
+                    container.innerHTML = `
+                        <div class="profile-card">
+                            <img src="${u.profileUrl}" class="avatar" onerror="this.src='https://ui-avatars.com/api/?name=${u.fullname}&background=random'">
+                            <div class="name">${u.fullname}</div>
+                            <span class="user-tag">@${u.username}</span>
+                            
+                            <div class="balance-box">
+                                <small>Saldo Akun</small>
+                                <b>Rp ${u.saldo.toLocaleString()}</b>
+                            </div>
+
+                            <div class="info-row"><span>WhatsApp</span><b>${u.nomor}</b></div>
+                            <div class="info-row"><span>Email</span><b>${u.email}</b></div>
+                            <div class="info-row"><span>Role</span><b style="color:var(--aksen)">${u.role.toUpperCase()}</b></div>
+                            <div class="info-row"><span>Referral</span><b>${u.referralCode}</b></div>
+                            <div class="info-row"><span>Status</span><b style="color:#10b981">${u.isVerified ? 'VERIFIED' : 'UNVERIFIED'}</b></div>
+                            
+                            <a href="../admin/admin.html" class="btn-back"><i class="fas fa-arrow-left"></i> Kembali ke Panel</a>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<div class="loading">Gagal: ' + (res.message || 'Data tidak ditemukan') + '</div>';
+                }
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="loading">
+                        <i class="fas fa-exclamation-triangle" style="font-size:30px; color:#ff4d4d; margin-bottom:10px"></i><br>
+                        Gagal memuat data.<br>
+                        <small style="font-size:10px; color:#333">Pastikan file api/profile.js sudah dideploy.</small>
+                    </div>`;
+            }
+        }
+
+        loadProfile();
+    </script>
+</body>
+</html>
