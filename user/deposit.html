@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEPOSIT - LAPAK DIKA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --aksen: #4cc9f0; --bg: #070708; --card: rgba(255, 255, 255, 0.03); --border: rgba(255, 255, 255, 0.08); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .container { width: 100%; max-width: 400px; }
+        .header { margin-bottom: 30px; text-align: center; }
+        .header h1 { font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+        .input-group { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 24px; margin-bottom: 20px; }
+        input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 15px; border-radius: 12px; color: white; font-family: inherit; font-weight: 800; font-size: 18px; text-align: center; margin-top: 10px; outline: none; }
+        .nom-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
+        .nom-btn { background: var(--card); padding: 10px; border-radius: 10px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); text-align: center; }
+        .nom-btn:active { background: var(--aksen); color: black; }
+        .btn-main { width: 100%; padding: 18px; border-radius: 16px; border: none; background: var(--aksen); color: black; font-weight: 800; cursor: pointer; }
+        .qr-card { background: white; padding: 20px; border-radius: 24px; margin-top: 20px; text-align: center; color: black; }
+        .qr-card img { width: 100%; border-radius: 12px; }
+        .info-bayar { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 20px; margin-top: 20px; text-align: center; }
+        .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 11px; background: rgba(76, 201, 240, 0.1); color: var(--aksen); margin-bottom: 10px; font-weight: 800; }
+        .btn-cancel { background: none; border: 1px solid #ff4d4d; color: #ff4d4d; width: 100%; padding: 12px; border-radius: 12px; margin-top: 15px; font-weight: 700; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header"><h1>DEPOSIT SALDO</h1></div>
+    <div id="form-depo">
+        <div class="input-group">
+            <label style="font-size: 11px; color: #666; font-weight: 800;">NOMINAL (MIN 2.000)</label>
+            <input type="number" id="nominal" placeholder="0" value="10000">
+            <div class="nom-grid">
+                <div class="nom-btn" onclick="setNom(2000)">2k</div>
+                <div class="nom-btn" onclick="setNom(5000)">5k</div>
+                <div class="nom-btn" onclick="setNom(10000)">10k</div>
+                <div class="nom-btn" onclick="setNom(20000)">20k</div>
+                <div class="nom-btn" onclick="setNom(50000)">50k</div>
+                <div class="nom-btn" onclick="setNom(100000)">100k</div>
+            </div>
+        </div>
+        <button class="btn-main" onclick="prosesDeposit()">BUAT PESANAN</button>
+    </div>
+    <div id="result"></div>
+</div>
+
+<script>
+    let cekInterval;
+    const userEmail = localStorage.getItem('userEmail');
+
+    function setNom(v) { document.getElementById('nominal').value = v; }
+
+    async function prosesDeposit() {
+        const nom = document.getElementById('nominal').value;
+        const resDiv = document.getElementById('result');
+        if(nom < 2000) return alert("Minimal 2rb bang!");
+
+        resDiv.innerHTML = `<div style="text-align:center; padding:50px;"><i class="fas fa-spinner fa-spin"></i> Menyiapkan QRIS...</div>`;
+        document.getElementById('form-depo').style.display = 'none';
+
+        try {
+            const r = await fetch(`/api/deposit?nominal=${nom}&metode=QRISFAST`);
+            const res = await r.json();
+
+            if (res.success) {
+                const d = res.data;
+                resDiv.innerHTML = `
+                    <div class="qr-card">
+                        <img src="${d.qr_image}">
+                        <div style="font-weight: 800; margin-top: 10px;">SCAN QRIS DI ATAS</div>
+                    </div>
+                    <div class="info-bayar">
+                        <div class="status-badge"><i class="fas fa-sync fa-spin"></i> MENUNGGU PEMBAYARAN</div>
+                        <div style="font-size: 24px; font-weight: 800; color: var(--aksen);">Rp ${d.nominal.toLocaleString()}</div>
+                        <button class="btn-cancel" onclick="batalDepo('${d.id}')">BATALKAN</button>
+                    </div>
+                `;
+                startAutoCheck(d.id);
+            }
+        } catch (e) { alert("Sistem Error"); }
+    }
+
+    function startAutoCheck(id) {
+        cekInterval = setInterval(async () => {
+            try {
+                const r = await fetch(`/api/status-deposit?id=${id}&email=${userEmail}`);
+                const res = await r.json();
+                if (res.status === 'success') {
+                    clearInterval(cekInterval);
+                    document.getElementById('result').innerHTML = `
+                        <div style="text-align:center; padding:40px; background:var(--card); border: 1px solid #10b981; border-radius:24px;">
+                            <i class="fas fa-check-circle" style="font-size:50px; color:#10b981"></i>
+                            <h2 style="margin-top:20px;">SUKSES!</h2>
+                            <p style="color:#888;">Saldo Rp ${res.added.toLocaleString()} masuk otomatis.</p>
+                            <button class="btn-main" onclick="location.href='katalog.html'">GAS BELANJA</button>
+                        </div>
+                    `;
+                }
+            } catch (e) {}
+        }, 5000);
+    }
+
+    async function batalDepo(id) {
+        if(!confirm("Yakin batalin?")) return;
+        const r = await fetch(`/api/cancel-deposit?id=${id}`);
+        const res = await r.json();
+        if(res.success) { clearInterval(cekInterval); location.reload(); }
+    }
+</script>
+</body>
+</html>
