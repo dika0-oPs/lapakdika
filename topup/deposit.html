@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEPOSIT - LAPAK DIKA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --aksen: #4cc9f0; 
+            --bg: #070708; 
+            --card: rgba(255, 255, 255, 0.03); 
+            --border: rgba(255, 255, 255, 0.08); 
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            color: white; 
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container { width: 100%; max-width: 400px; margin-top: 20px; }
+
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .back-btn { background: var(--card); border: 1px solid var(--border); color: white; padding: 10px 15px; border-radius: 12px; cursor: pointer; }
+
+        .input-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 25px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .input-box label { font-size: 11px; font-weight: 800; color: #555; letter-spacing: 1px; }
+
+        input {
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            padding: 18px;
+            border-radius: 15px;
+            color: white;
+            font-size: 20px;
+            font-weight: 800;
+            text-align: center;
+            margin: 15px 0;
+            outline: none;
+        }
+
+        .grid-nom { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .btn-nom {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-nom:hover { background: var(--aksen); color: black; border-color: var(--aksen); }
+
+        .btn-bayar {
+            width: 100%;
+            padding: 18px;
+            background: var(--aksen);
+            border: none;
+            border-radius: 18px;
+            color: black;
+            font-weight: 800;
+            font-size: 16px;
+            margin-top: 25px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(76, 201, 240, 0.2);
+        }
+
+        .qr-area {
+            background: white;
+            padding: 20px;
+            border-radius: 25px;
+            margin-top: 20px;
+            text-align: center;
+            animation: slideUp 0.4s ease;
+        }
+        .qr-area img { width: 100%; border-radius: 15px; }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <button class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+        <h2 style="font-size: 18px; font-weight: 800;">TOP UP SALDO</h2>
+    </div>
+
+    <div id="form-section">
+        <div class="input-box">
+            <label>NOMINAL DEPOSIT</label>
+            <input type="number" id="nom-input" value="10000" placeholder="0">
+            
+            <div class="grid-nom">
+                <div class="btn-nom" onclick="setN(2000)">2k</div>
+                <div class="btn-nom" onclick="setN(5000)">5k</div>
+                <div class="btn-nom" onclick="setN(10000)">10k</div>
+                <div class="btn-nom" onclick="setN(20000)">20k</div>
+                <div class="btn-nom" onclick="setN(50000)">50k</div>
+                <div class="btn-nom" onclick="setN(100000)">100k</div>
+            </div>
+        </div>
+        <button class="btn-bayar" onclick="gasDepo()">BUAT PESANAN</button>
+    </div>
+
+    <div id="qr-result"></div>
+</div>
+
+<script>
+    const userMail = localStorage.getItem('userEmail');
+    let poll;
+
+    function setN(v) { document.getElementById('nom-input').value = v; }
+
+    async function gasDepo() {
+        const n = document.getElementById('nom-input').value;
+        const res = document.getElementById('qr-result');
+        if(n < 2000) return alert("Minimal 2rb bang!");
+
+        res.innerHTML = `<div style="text-align:center; padding:40px;"><i class="fas fa-spinner fa-spin"></i> Menyiapkan QRIS...</div>`;
+        document.getElementById('form-section').style.display = 'none';
+
+        try {
+            const req = await fetch(`/api/deposit?nominal=${n}&metode=QRISFAST`);
+            const d = await req.json();
+
+            if(d.success) {
+                res.innerHTML = `
+                    <div class="qr-area">
+                        <img src="${d.data.qr_image}">
+                        <div style="color:black; font-weight:800; margin-top:10px;">SCAN & BAYAR</div>
+                    </div>
+                    <div style="text-align:center; margin-top:20px; background:var(--card); padding:20px; border-radius:20px; border:1px solid var(--border)">
+                        <div style="font-size:11px; color:#555;">NOMINAL TERTAGIH</div>
+                        <div style="font-size:26px; font-weight:800; color:var(--aksen)">Rp ${d.data.nominal.toLocaleString()}</div>
+                        <div style="font-size:10px; color:#ff4d4d; margin-top:10px;"><i class="fas fa-sync fa-spin"></i> Mengecek otomatis...</div>
+                        <button onclick="location.reload()" style="background:none; border:none; color:#555; font-size:11px; margin-top:15px; cursor:pointer">Batal & Kembali</button>
+                    </div>
+                `;
+                startCheck(d.data.id);
+            }
+        } catch(e) { alert("Gagal koneksi ke server"); }
+    }
+
+    function startCheck(id) {
+        poll = setInterval(async () => {
+            const r = await fetch(`/api/status-deposit?id=${id}&email=${userMail}`);
+            const res = await r.json();
+            if(res.status === 'success') {
+                clearInterval(poll);
+                document.getElementById('qr-result').innerHTML = `
+                    <div style="text-align:center; padding:50px; background:var(--card); border:1px solid #05CD99; border-radius:30px;">
+                        <i class="fas fa-check-circle" style="font-size:60px; color:#05CD99"></i>
+                        <h2 style="margin-top:20px;">SUKSES!</h2>
+                        <p style="color:#888;">Saldo sudah masuk ke akun lo.</p>
+                        <button class="btn-bayar" onclick="location.href='katalog.html'">GAS BELANJA</button>
+                    </div>
+                `;
+            }
+        }, 5000);
+    }
+</script>
+
+</body>
+</html>
