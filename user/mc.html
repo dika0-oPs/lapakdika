@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>dika rekber</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --bg: #000000; 
+            --card: #121212; 
+            --border: #222222; 
+            --brand: #ffffff; 
+            --green: #2ecc71; 
+        }
+
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; text-transform: lowercase; }
+        body { background: var(--bg); color: #ffffff; margin: 0; padding: 0; height: 100dvh; overflow: hidden; }
+
+        .app { width: 100%; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; height: 100%; background: #000; }
+
+        .header { padding: 15px 20px; background: #000; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .header b { font-size: 16px; font-weight: 700; color: #fff; }
+
+        .chat-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #000; }
+        
+        .room-card { 
+            background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 8px; 
+            cursor: pointer; 
+        }
+        .room-card b { font-size: 14px; color: #fff; }
+
+        .msg { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.4; position: relative; }
+        .msg.me { align-self: flex-end; background: #ffffff; color: #000; border-bottom-right-radius: 2px; }
+        .msg.partner { align-self: flex-start; background: #1a1a1a; color: #fff; border-bottom-left-radius: 2px; border: 1px solid var(--border); }
+        
+        .role-badge { font-size: 9px; font-weight: 800; color: #888; margin-bottom: 4px; display: block; }
+        .me .role-badge { color: #555; }
+
+        .system-msg { align-self: center; background: #111; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin: 10px 0; width: 100%; display: flex; gap: 12px; }
+        .system-img { width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0; object-fit: cover; }
+        .system-txt { font-size: 11px; color: #aaa; line-height: 1.5; }
+
+        .input-bar { padding: 12px 15px; background: #000; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+        .inp-msg { flex: 1; background: #111; border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; color: #fff; outline: none; font-size: 14px; }
+        
+        .btn-send { background: #fff; color: #000; width: 42px; height: 42px; border-radius: 8px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; place-items: center; padding: 20px; }
+        .modal-card { background: #111; border: 1px solid var(--border); width: 100%; max-width: 350px; border-radius: 12px; padding: 20px; }
+        .m-inp { width: 100%; background: #000; color: #fff; padding: 12px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 10px; outline: none; }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div id="view-list" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="header">
+            <button onclick="location.href='katalog.html'" style="background:none; border:none; color:#fff; font-size: 18px;"><i class="fa-solid fa-house"></i></button>
+            <b>dika rekber</b>
+            <div style="width:25px"></div>
+        </div>
+        <div class="chat-area" id="rooms"></div>
+        <div style="padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #000;">
+            <button onclick="openM('create')" style="background:#fff; border:none; padding:14px; border-radius:8px; font-weight:700; font-size:12px; color:#000;">buat room</button>
+            <button onclick="openM('join')" style="background:#111; border:1px solid #222; padding:14px; border-radius:8px; font-weight:700; font-size:12px; color:#fff;">gabung room</button>
+        </div>
+    </div>
+
+    <div id="view-chat" style="display: none; height: 100%; flex-direction: column;">
+        <div class="header">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button onclick="closeChat()" style="background:none; border:none; color:#fff;"><i class="fas fa-arrow-left"></i></button>
+                <div>
+                    <div id="chat-title" style="font-size:14px; font-weight:700;">room</div>
+                    <div style="font-size:10px; color:#888;">transaksi aktif</div>
+                </div>
+            </div>
+            <button onclick="markDone()" style="background:var(--green); border:none; padding:6px 14px; border-radius:6px; font-size:11px; font-weight:700; color:#000;">selesai</button>
+        </div>
+        <div class="chat-area" id="chat-box"></div>
+        <div class="input-bar">
+            <label style="color:#fff; cursor:pointer; font-size:18px; padding:0 5px;"><i class="fas fa-paperclip"></i><input type="file" hidden id="fileInp" onchange="sendFile()"></label>
+            <input type="text" id="msgInp" class="inp-msg" placeholder="ketik pesan...">
+            <button class="btn-send" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="m-create">
+    <div class="modal-card">
+        <h3 style="margin:0 0 15px; font-size:16px;">transaksi baru</h3>
+        <select id="role" class="m-inp">
+            <option value="seller">sebagai penjual</option>
+            <option value="buyer">sebagai pembeli</option>
+        </select>
+        <input type="text" id="pID" class="m-inp" placeholder="partner username">
+        <input type="number" id="amt" class="m-inp" placeholder="nominal (rp)">
+        <button onclick="actionCreate()" style="width:100%; background:#fff; color:#000; border:none; padding:12px; border-radius:6px; font-weight:700;">buat room sekarang</button>
+        <button onclick="closeM('create')" style="width:100%; background:none; color:#555; border:none; margin-top:10px;">batal</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="m-join">
+    <div class="modal-card">
+        <h3 style="margin:0 0 15px; font-size:16px;">gabung room</h3>
+        <input type="text" id="joinID" class="m-inp" placeholder="id room (mc-xxxx)">
+        <button onclick="actionJoin()" style="width:100%; background:#fff; color:#000; border:none; padding:12px; border-radius:6px; font-weight:700;">masuk</button>
+        <button onclick="closeM('join')" style="width:100%; background:none; color:#555; border:none; margin-top:10px;">batal</button>
+    </div>
+</div>
+
+<script>
+const _s = supabase.createClient('https://pmoqjgovghxibdcxpqql.supabase.co', 'sb_publishable_eXCMrrASbuEqLkNzjAMT5A_SM5GQRH6');
+const myID = localStorage.getItem('username');
+let activeRoom = null;
+let roomData = null;
+let chatChannel = null;
+
+function openM(t) { document.getElementById('m-'+t).style.display = 'grid'; }
+function closeM(t) { document.getElementById('m-'+t).style.display = 'none'; }
+
+async function actionCreate() {
+    const role = document.getElementById('role').value;
+    const pID = document.getElementById('pID').value;
+    const amt = parseInt(document.getElementById('amt').value);
+    if(!pID || !amt) return;
+    let fee = amt <= 10000 ? 5000 : amt <= 99000 ? 10000 : 25000;
+    const rName = "mc-" + Math.floor(1000 + Math.random() * 9000);
+    const { data, error } = await _s.from('mc_trx').insert([{
+        room_name: rName,
+        seller_id: role === 'seller' ? myID : pID,
+        buyer_id: role === 'buyer' ? myID : pID,
+        amount: amt, 
+        admin_fee: fee,
+        final_amount: amt + fee, 
+        status: 'pending'
+    }]).select().single();
+    if(!error) {
+        closeM('create');
+        openChat(data.id, data.room_name);
+    }
+}
+
+async function actionJoin() {
+    const rName = document.getElementById('joinID').value.toLowerCase();
+    const { data } = await _s.from('mc_trx').select('*').eq('room_name', rName).single();
+    if(data) {
+        await _s.from('mc_messages').insert([{ room_id: data.id, sender_id: 'SYSTEM', message: `@${myID} masuk ke room` }]);
+        openChat(data.id, data.room_name);
+        closeM('join');
+    }
+}
+
+async function loadRooms() {
+    const { data } = await _s.from('mc_trx').select('*').or(`seller_id.eq.${myID},buyer_id.eq.${myID}`).order('id', { ascending: false });
+    const roomsDiv = document.getElementById('rooms');
+    if(data && data.length > 0) {
+        roomsDiv.innerHTML = data.map(t => `
+            <div class="room-card" onclick="openChat(${t.id}, '${t.room_name}')">
+                <div style="display:flex; justify-content:space-between;">
+                    <b>${t.room_name}</b>
+                    <span style="font-weight:700;">rp ${t.amount.toLocaleString()}</span>
+                </div>
+                <div style="font-size:11px; color:#666; margin-top:5px;">partner: @${t.seller_id === myID ? t.buyer_id : t.seller_id} • status: ${t.status}</div>
+            </div>
+        `).join('');
+    }
+}
+
+async function openChat(id, name) {
+    activeRoom = id;
+    const { data } = await _s.from('mc_trx').select('*').eq('id', id).single();
+    roomData = data;
+    document.getElementById('view-list').style.display = 'none';
+    document.getElementById('view-chat').style.display = 'flex';
+    document.getElementById('chat-title').innerText = name;
+    
+    const chatBox = document.getElementById('chat-box');
+    chatBox.innerHTML = `
+        <div class="system-msg">
+            <img src="https://i.ibb.co.com/pBF0bGkb/anjay.jpg" class="system-img">
+            <div class="system-txt">
+                <b>dika rekber</b><br>
+                nominal: rp ${data.amount.toLocaleString()}<br>
+                fee: rp ${data.admin_fee.toLocaleString()}<br>
+                total bayar pembeli: rp ${data.final_amount.toLocaleString()}
+            </div>
+        </div>
+    `;
+    
+    await loadMsgs();
+    listen();
+}
+
+function listen() {
+    if(chatChannel) _s.removeChannel(chatChannel);
+    chatChannel = _s.channel(`room_${activeRoom}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mc_messages', filter: `room_id=eq.${activeRoom}` }, p => append(p.new))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'mc_trx', filter: `id=eq.${activeRoom}` }, p => {
+        roomData = p.new;
+        if(p.new.status === 'success') Swal.fire({ title:'berhasil', text:'saldo sudah cair', icon:'success', background:'#111', color:'#fff' });
+    })
+    .subscribe();
+}
+
+async function loadMsgs() {
+    const { data } = await _s.from('mc_messages').select('*').eq('room_id', activeRoom).order('id', { ascending: true });
+    if(data) data.forEach(append);
+}
+
+function append(m) {
+    const chatBox = document.getElementById('chat-box');
+    if(!chatBox || document.getElementById(`msg-${m.id}`)) return;
+
+    if(m.sender_id === 'SYSTEM') {
+        chatBox.insertAdjacentHTML('beforeend', `<div id="msg-${m.id}" style="text-align:center; font-size:11px; color:#555; margin:10px 0;">— ${m.message} —</div>`);
+    } else {
+        const isMe = m.sender_id === myID;
+        const role = m.sender_id === roomData.seller_id ? 'penjual' : 'pembeli';
+        let content = m.message || '';
+        if(m.file_url) {
+            content += m.file_type.includes('image') 
+                ? `<img src="${m.file_url}" style="width:100%; border-radius:8px; margin-top:5px;">` 
+                : `<video controls src="${m.file_url}" style="width:100%; border-radius:8px; margin-top:5px;"></video>`;
+        }
+        chatBox.insertAdjacentHTML('beforeend', `
+            <div id="msg-${m.id}" class="msg ${isMe ? 'me' : 'partner'}">
+                <span class="role-badge">${role}</span>
+                ${content}
+            </div>
+        `);
+    }
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendMsg() {
+    const inp = document.getElementById('msgInp');
+    const val = inp.value;
+    if(!val) return;
+    inp.value = '';
+    await _s.from('mc_messages').insert([{ room_id: activeRoom, sender_id: myID, message: val }]);
+}
+
+async function sendFile() {
+    const file = document.getElementById('fileInp').files[0];
+    if(!file) return;
+    const name = Date.now() + '_' + file.name;
+    const { data } = await _s.storage.from('mc_evidence').upload(name, file);
+    if(data) {
+        const { data: urlData } = _s.storage.from('mc_evidence').getPublicUrl(name);
+        await _s.from('mc_messages').insert([{ room_id: activeRoom, sender_id: myID, file_url: urlData.publicUrl, file_type: file.type }]);
+    }
+}
+
+async function markDone() {
+    const up = myID === roomData.seller_id ? { seller_done: true } : { buyer_done: true };
+    await _s.from('mc_trx').update(up).eq('id', activeRoom);
+    await _s.from('mc_messages').insert([{ room_id: activeRoom, sender_id: 'SYSTEM', message: `@${myID} menandai selesai` }]);
+    
+    const { data: trx } = await _s.from('mc_trx').select('*').eq('id', activeRoom).single();
+    if(trx.seller_done && trx.buyer_done && trx.status !== 'success') {
+        const { data: buyer } = await _s.from('profiles').select('balance').eq('username', trx.buyer_id).single();
+        if(buyer && buyer.balance >= trx.final_amount) {
+            const { error: bErr } = await _s.from('profiles').update({ balance: buyer.balance - trx.final_amount }).eq('username', trx.buyer_id);
+            if(bErr) return;
+            const { data: seller } = await _s.from('profiles').select('balance').eq('username', trx.seller_id).single();
+            await _s.from('profiles').update({ balance: (seller?.balance || 0) + trx.amount }).eq('username', trx.seller_id);
+            await _s.from('mc_trx').update({ status: 'success' }).eq('id', activeRoom);
+            await _s.from('mc_messages').insert([{ room_id: activeRoom, sender_id: 'SYSTEM', message: `transaksi sukses, saldo telah dipindahkan` }]);
+        } else {
+            Swal.fire('gagal', 'saldo pembeli tidak cukup', 'error');
+        }
+    }
+}
+
+function closeChat() { 
+    if(chatChannel) _s.removeChannel(chatChannel);
+    activeRoom = null; 
+    document.getElementById('view-list').style.display = 'flex'; 
+    document.getElementById('view-chat').style.display = 'none'; 
+    loadRooms(); 
+}
+loadRooms();
+</script>
+</body>
+</html>
