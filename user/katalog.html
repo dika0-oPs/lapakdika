@@ -198,7 +198,7 @@
     <div id="toast">Berhasil!</div>
     <div class="overlay" id="ov" onclick="cls()"></div>
 
-<div class="sidebar" id="side">
+    <div class="sidebar" id="side">
     <div class="logo" style="margin-bottom: 30px; font-size: 22px; font-weight: 800; color: var(--aksen);">
         <i class="fas fa-bolt"></i> LAPAK DIKA
     </div>
@@ -259,8 +259,13 @@
     <nav class="navbar">
     <div style="display:flex; align-items:center; gap:15px;">
         <i class="fas fa-bars-staggered" style="font-size:20px; cursor:pointer;" onclick="toggleSide()"></i>
-        <div class="logo"><span>LAPAK</span><span style="color:var(--brand)">DIKA</span></div>
+        <div style="display: flex; flex-direction: column;">
+            <div class="logo" style="margin:0; line-height:1;"><span>LAPAK</span><span style="color:var(--brand)">DIKA</span></div>
+            <div id="u-id" style="font-size: 10px; font-weight: 800; color: var(--brand); margin-top: 3px; letter-spacing: 1px; cursor: pointer;" title="Klik untuk salin">ID: ....</div>
+        </div>
     </div>
+    <div class="balance-pill"><i class="fas fa-wallet"></i><span id="u-bal">Rp 0</span></div>
+    </nav>
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
         <div id="u-id" style="font-size: 9px; font-weight: 800; color: var(--brand); text-transform: uppercase; letter-spacing: 1px; background: rgba(76, 201, 240, 0.1); padding: 2px 8px; border-radius: 5px; margin-bottom: 3px;">@LOADING...</div>
         <div class="balance-pill" style="margin:0;"><i class="fas fa-wallet"></i><span id="u-bal">Rp 0</span></div>
@@ -371,9 +376,31 @@
         userBalance = u.balance;
         document.getElementById('u-bal').innerText = `Rp ${userBalance.toLocaleString()}`;
         
-        const myID = u.username || 'USER';
-        document.getElementById('u-id').innerText = `@${myID}`;
+        let myID;
+        if (u.username && u.username !== '') {
+            myID = u.username;
+        } else {
+            // Bikin 5 digit angka acak (80000 - 99999)
+            myID = Math.floor(Math.random() * (99999 - 10000 + 1) + 10000).toString();
+            
+            // Simpan ke database biar ID-nya permanen gak berubah-ubah
+            await _s.from('profiles').update({ username: myID }).eq('email', mail);
+        }
+
+        document.getElementById('u-id').innerText = `ID: ${myID}`;
         localStorage.setItem('username', myID);
+        
+        document.getElementById('u-id').onclick = () => {
+            navigator.clipboard.writeText(myID);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'ID ' + myID + ' disalin!',
+                showConfirmButton: false,
+                timer: 1000
+            });
+        };
     }
 }
 
