@@ -220,7 +220,10 @@
     </button>
     <button class="side-btn" onclick="location.href='./DIKZ/tourl.html'">
     <i class="fas fa-cloud-upload-alt"></i> To Url
-   </button>
+    </button>
+    <button class="side-btn" onclick="location.href='/user/mc.html'">
+    <i class="fas fa-handshake"></i> Rekber / Mc
+    </button>
 
     <span class="side-title">Tools</span>
     <button class="side-btn" onclick="openMod('calc')">
@@ -254,11 +257,14 @@
 </div>
 
     <nav class="navbar">
-        <div style="display:flex; align-items:center; gap:15px;">
-            <i class="fas fa-bars-staggered" style="font-size:20px; cursor:pointer;" onclick="toggleSide()"></i>
-            <div class="logo"><span>LAPAK</span><span style="color:var(--brand)">DIKA</span></div>
-        </div>
-        <div class="balance-pill"><i class="fas fa-wallet"></i><span id="u-bal">Rp 0</span></div>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <i class="fas fa-bars-staggered" style="font-size:20px; cursor:pointer;" onclick="toggleSide()"></i>
+        <div class="logo"><span>LAPAK</span><span style="color:var(--brand)">DIKA</span></div>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
+        <div id="u-id" style="font-size: 9px; font-weight: 800; color: var(--brand); text-transform: uppercase; letter-spacing: 1px; background: rgba(76, 201, 240, 0.1); padding: 2px 8px; border-radius: 5px; margin-bottom: 3px;">@LOADING...</div>
+        <div class="balance-pill" style="margin:0;"><i class="fas fa-wallet"></i><span id="u-bal">Rp 0</span></div>
+    </div>
     </nav>
 
     <div class="container">
@@ -356,15 +362,20 @@
         function openMod(id) { cls(); document.getElementById('m-'+id).style.display = 'block'; document.getElementById('ov').style.display = 'block'; if(id==='testi') loadTesti(); if(id==='top') loadTop(); }
 
         async function loadData() {
-            const { data: p } = await _s.from('products').select('*').eq('status', 'READY').order('id', { ascending: false });
-            allProducts = p || [];
-            renderProducts(allProducts);
-            const { data: u } = await _s.from('profiles').select('balance').eq('email', mail).single();
-            if(u) {
-                userBalance = u.balance;
-                document.getElementById('u-bal').innerText = `Rp ${userBalance.toLocaleString()}`;
-            }
-        }
+    const { data: p } = await _s.from('products').select('*').eq('status', 'READY').order('id', { ascending: false });
+    allProducts = p || [];
+    renderProducts(allProducts);
+
+    const { data: u } = await _s.from('profiles').select('balance, username').eq('email', mail).single();
+    if(u) {
+        userBalance = u.balance;
+        document.getElementById('u-bal').innerText = `Rp ${userBalance.toLocaleString()}`;
+        
+        const myID = u.username || 'USER';
+        document.getElementById('u-id').innerText = `@${myID}`;
+        localStorage.setItem('username', myID);
+    }
+}
 
    function renderProducts(items) {
     const list = document.getElementById('product-list');
