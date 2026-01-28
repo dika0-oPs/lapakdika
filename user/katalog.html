@@ -139,10 +139,62 @@
         .btn-det-small { background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border); }
         .btn-buy-small { background: var(--brand); color: white; }
         .sidebar {
-            position: fixed; top: 0; left: -300px; width: 280px; height: 100%;
-            background: #0f0f12; z-index: 2000; transition: 0.4s;
-            padding: 30px 20px; border-right: 1px solid var(--border);
-        }
+    position: fixed; 
+    top: 0; 
+    left: -300px; 
+    width: 280px; 
+    height: 100%;
+    background: #0f0f12; 
+    z-index: 2000; 
+    transition: 0.4s;
+    padding: 30px 20px; 
+    border-right: 1px solid var(--border);
+    overflow-y: auto; 
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+.side-title {
+    font-size: 10px;
+    font-weight: 800;
+    color: #555;
+    margin: 25px 0 10px 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    display: block;
+}
+
+.side-btn {
+    width: 100%;
+    padding: 14px 18px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(76, 201, 240, 0.1);
+    border-radius: 15px;
+    color: white;
+    text-align: left;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.side-btn i {
+    width: 20px;
+    color: var(--brand);
+}
+
+.side-btn:active {
+    background: var(--brand);
+    color: #000;
+}
         .sidebar.active { left: 0; }
         .side-btn {
             width: 100%; padding: 14px; background: transparent; border: none;
