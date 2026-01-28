@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REKBER- Lapak Dika</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --brand: #4cc9f0; --bg: #09090b; --card: #18181b; --border: #27272a; --green: #22c55e; }
+        * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: white; margin: 0; padding: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        .app { width: 100%; max-width: 450px; display: flex; flex-direction: column; background: #000; }
+        
+        .chat-header { padding: 15px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 15px; }
+        .chat-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .msg { max-width: 80%; padding: 10px 14px; border-radius: 18px; font-size: 13px; line-height: 1.5; position: relative; }
+        .msg.me { align-self: flex-end; background: var(--brand); color: #000; border-bottom-right-radius: 4px; }
+        .msg.partner { align-self: flex-start; background: var(--card); color: #fff; border-bottom-left-radius: 4px; border: 1px solid var(--border); }
+        .msg img, .msg video { width: 100%; border-radius: 10px; margin-top: 5px; }
+        .msg .time { font-size: 8px; opacity: 0.6; display: block; margin-top: 4px; text-align: right; }
+
+        .input-chat { padding: 15px; background: var(--card); border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+        .inp-msg { flex: 1; background: #000; border: 1px solid var(--border); padding: 12px; border-radius: 25px; color: white; outline: none; font-size: 13px; }
+        .btn-file { color: var(--brand); font-size: 20px; cursor: pointer; }
+        .btn-send { background: var(--brand); color: #000; width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer; display: grid; place-items: center; }
+
+        .mc-info { font-size: 10px; padding: 5px 15px; background: rgba(76, 201, 240, 0.1); color: var(--brand); font-weight: 800; display: flex; justify-content: space-between; }
+        #file-preview { display: none; padding: 10px; background: var(--card); border-top: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div id="room-list-view">
+        <div class="chat-header">
+            <button onclick="location.href='katalog.html'" style="background:none; border:none; color:white;"><i class="fas fa-arrow-left"></i></button>
+            <b style="font-size: 16px;">TRANSAKSI</b>
+        </div>
+        <div id="rooms" style="padding: 15px;"></div>
+    </div>
+
+    <div id="chat-view" style="display: none; height: 100%; flex-direction: column;">
+        <div class="chat-header">
+            <button onclick="backToRooms()" style="background:none; border:none; color:white;"><i class="fas fa-arrow-left"></i></button>
+            <div id="chat-title" style="font-size: 14px; font-weight: 800;">Room MC</div>
+        </div>
+        <div class="mc-info">
+            <span id="mc-amount">Rp 0</span>
+            <span id="mc-status">PENDING</span>
+        </div>
+        <div class="chat-area" id="chat-box"></div>
+        <div id="file-preview"></div>
+        <div class="input-chat">
+            <label class="btn-file"><i class="fas fa-paperclip"></i><input type="file" id="fileInp" hidden onchange="previewFile()"></label>
+            <input type="text" id="msgInp" class="inp-msg" placeholder="Ketik pesan / bukti...">
+            <button class="btn-send" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const _s = supabase.createClient('URL_SUPABASE_LO', 'KEY_ANON_LO');
+    const myID = localStorage.getItem('username');
+    let activeRoom = null;
+
+    async function loadRooms() {
+        const { data } = await _s.from('mc_trx').select('*').or(`seller_id.eq.${myID},buyer_id.eq.${myID}`).order('id', { ascending: false });
+        if(data) {
+            document.getElementById('rooms').innerHTML = data.map(t => `
+                <div onclick="openChat(${t.id}, '${t.room_name}', ${t.amount}, '${t.status}')" style="background:var(--card); padding:15px; border-radius:15px; margin-bottom:10px; border:1px solid var(--border); cursor:pointer;">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; color:var(--brand);">
+                        <span>${t.room_name}</span>
+                        <span>Rp ${t.amount.toLocaleString()}</span>
+                    </div>
+                    <div style="font-size:11px; margin-top:5px; opacity:0.6;">Partner: @${t.seller_id === myID ? t.buyer_id : t.seller_id}</div>
+                </div>
+            `).join('');
+        }
+    }
+
+    async function openChat(id, name, amt, status) {
+        activeRoom = id;
+        document.getElementById('room-list-view').style.display = 'none';
+        document.getElementById('chat-view').style.display = 'flex';
+        document.getElementById('chat-title').innerText = name;
+        document.getElementById('mc-amount').innerText = `Total: Rp ${amt.toLocaleString()}`;
+        document.getElementById('mc-status').innerText = status.toUpperCase();
+        
+        loadMessages();
+        
+        _s.channel('any').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mc_messages', filter: `room_id=eq.${id}` }, payload => {
+            appendMsg(payload.new);
+        }).subscribe();
+    }
+
+    async function loadMessages() {
+        const { data } = await _s.from('mc_messages').select('*').eq('room_id', activeRoom).order('id', { ascending: true });
+        document.getElementById('chat-box').innerHTML = '';
+        if(data) data.forEach(m => appendMsg(m));
+    }
+
+    function appendMsg(m) {
+        const box = document.getElementById('chat-box');
+        const isMe = m.sender_id === myID;
+        let content = m.message;
+        if(m.file_url) {
+            if(m.file_type.includes('image')) content += `<img src="${m.file_url}" onclick="window.open('${m.file_url}')">`;
+            if(m.file_type.includes('video')) content += `<video controls src="${m.file_url}"></video>`;
+        }
+        
+        const div = document.createElement('div');
+        div.className = `msg ${isMe ? 'me' : 'partner'}`;
+        div.innerHTML = `${content} <span class="time">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function previewFile() {
+        const file = document.getElementById('fileInp').files[0];
+        if(file) document.getElementById('file-preview').style.display = 'block';
+        document.getElementById('file-preview').innerText = "File terpilih: " + file.name;
+    }
+
+    async function sendMsg() {
+        const msg = document.getElementById('msgInp').value;
+        const file = document.getElementById('fileInp').files[0];
+        if(!msg && !file) return;
+
+        let fileUrl = null;
+        let fileType = null;
+
+        if(file) {
+            const fName = `${Date.now()}_${file.name}`;
+            const { data } = await _s.storage.from('mc_evidence').upload(fName, file);
+            if(data) {
+                fileUrl = _s.storage.from('mc_evidence').getPublicUrl(fName).data.publicUrl;
+                fileType = file.type;
+            }
+        }
+
+        await _s.from('mc_messages').insert([{
+            room_id: activeRoom,
+            sender_id: myID,
+            message: msg,
+            file_url: fileUrl,
+            file_type: fileType
+        }]);
+
+        document.getElementById('msgInp').value = '';
+        document.getElementById('fileInp').value = '';
+        document.getElementById('file-preview').style.display = 'none';
+    }
+
+    function backToRooms() {
+        activeRoom = null;
+        document.getElementById('room-list-view').style.display = 'block';
+        document.getElementById('chat-view').style.display = 'none';
+    }
+
+    loadRooms();
+</script>
+</body>
+</html>
