@@ -134,9 +134,9 @@ async function actionCreate() {
         room_name: rName,
         seller_id: role === 'seller' ? myID : pID,
         buyer_id: role === 'buyer' ? myID : pID,
-        amount: amt,
+        amount: amt, 
         admin_fee: fee,
-        final_amount: amt - fee,
+        final_amount: amt + fee, 
         status: 'pending'
     }]).select().single();
     if(!error) {
@@ -185,8 +185,9 @@ async function openChat(id, name) {
             <img src="https://i.ibb.co.com/pBF0bGkb/anjay.jpg" class="system-img">
             <div class="system-txt">
                 <b>dika rekber</b><br>
-                fee 1k-10k: 5k • 10k-99k: 10k • 100k+: 25k<br>
-                klik tombol selesai jika transaksi sudah beres.
+                nominal: rp ${data.amount.toLocaleString()}<br>
+                fee: rp ${data.admin_fee.toLocaleString()}<br>
+                total bayar pembeli: rp ${data.final_amount.toLocaleString()}
             </div>
         </div>
     `;
@@ -260,14 +261,18 @@ async function markDone() {
     await _s.from('mc_trx').update(up).eq('id', activeRoom);
     await _s.from('mc_messages').insert([{ room_id: activeRoom, sender_id: 'SYSTEM', message: `@${myID} menandai selesai` }]);
     
-    const { data } = await _s.from('mc_trx').select('*').eq('id', activeRoom).single();
-    if(data.seller_done && data.buyer_done && data.status !== 'success') {
-        const { data: b } = await _s.from('profiles').select('balance').eq('username', data.buyer_id).single();
-        if(b && b.balance >= data.amount) {
-            await _s.from('profiles').update({ balance: b.balance - data.amount }).eq('username', data.buyer_id);
-            const { data: s } = await _s.from('profiles').select('balance').eq('username', data.seller_id).single();
-            await _s.from('profiles').update({ balance: (s?.balance || 0) + data.final_amount }).eq('username', data.seller_id);
+    const { data: trx } = await _s.from('mc_trx').select('*').eq('id', activeRoom).single();
+    if(trx.seller_done && trx.buyer_done && trx.status !== 'success') {
+        const { data: buyer } = await _s.from('profiles').select('balance').eq('username', trx.buyer_id).single();
+        if(buyer && buyer.balance >= trx.final_amount) {
+            const { error: bErr } = await _s.from('profiles').update({ balance: buyer.balance - trx.final_amount }).eq('username', trx.buyer_id);
+            if(bErr) return;
+            const { data: seller } = await _s.from('profiles').select('balance').eq('username', trx.seller_id).single();
+            await _s.from('profiles').update({ balance: (seller?.balance || 0) + trx.amount }).eq('username', trx.seller_id);
             await _s.from('mc_trx').update({ status: 'success' }).eq('id', activeRoom);
+            await _s.from('mc_messages').insert([{ room_id: activeRoom, sender_id: 'SYSTEM', message: `transaksi sukses, saldo telah dipindahkan` }]);
+        } else {
+            Swal.fire('gagal', 'saldo pembeli tidak cukup', 'error');
         }
     }
 }
