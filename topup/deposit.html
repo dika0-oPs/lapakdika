@@ -140,9 +140,6 @@
 
     async function gasDepo() {
     const n = document.getElementById('nom-input').value;
-    const userMail = localStorage.getItem('userEmail');
-    
-    if(!userMail) return alert("Email tidak ditemukan. Silakan login ulang!");
     if(n < 2000) return alert("Minimal Rp 2.000 bg");
     
     document.getElementById('view-input').style.display = 'none';
@@ -150,7 +147,8 @@
     document.getElementById('qr-img-cont').innerHTML = `<i class="fas fa-circle-notch fa-spin" style="color:#7c4dff; font-size:30px; padding:50px"></i>`;
 
     try {
-        const req = await fetch(`/api/deposit?nominal=${n}&email=${encodeURIComponent(userMail)}&metode=QRISFAST`);
+        // Hapus email di sini biar nggak error koneksi/400 Bad Request
+        const req = await fetch(`/api/deposit?nominal=${n}&metode=QRISFAST`);
         const d = await req.json();
         
         if(d.success) {
@@ -164,8 +162,7 @@
             location.reload();
         }
     } catch(e) { 
-        console.error(e);
-        alert("Terjadi kesalahan koneksi ke server.");
+        alert("Koneksi Error! Coba lagi.");
         location.reload(); 
     }
 }
