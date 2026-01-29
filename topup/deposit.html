@@ -177,22 +177,25 @@
     }
 
     async function runCheckStatus(id) {
-        try {
-            const r = await fetch(`/api/status-deposit?id=${id}&email=${userMail}`);
-            const res = await r.json();
-            
-            const dataObj = res.data || res;
-            const isSuccess = res.status === 'success' || dataObj.status === 'success';
+    try {
+        const r = await fetch(`/api/status-deposit?id=${id}&email=${userMail}`);
+        const res = await r.json();
+        
+        // Cek apakah status sukses ada di root atau di dalam data
+        const isSuccess = res.status === 'success' || (res.data && res.data.status === 'success');
 
-            if (isSuccess) {
-                localStorage.removeItem('activeTrxId');
-                localStorage.removeItem('activeTrxData');
-                showSuccess(dataObj, id);
-                return true;
-            }
-        } catch(e) { console.log("Check error"); }
-        return false;
-    }
+        if (isSuccess) {
+            localStorage.removeItem('activeTrxId');
+            localStorage.removeItem('activeTrxData');
+            
+            // Kirim data lengkap ke fungsi showSuccess
+            const finalData = res.data || res;
+            showSuccess(finalData, id);
+            return true;
+        }
+    } catch(e) { console.log("Check error"); }
+    return false;
+   }
 
     async function cekStatusManual() {
         const btn = document.getElementById('btn-cek-manual');
