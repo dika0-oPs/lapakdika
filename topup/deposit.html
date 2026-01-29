@@ -178,24 +178,27 @@
 
     async function runCheckStatus(id) {
     try {
+        const userMail = localStorage.getItem('userEmail');
         const r = await fetch(`/api/status-deposit?id=${id}&email=${userMail}`);
         const res = await r.json();
-        
-        // Cek apakah status sukses ada di root atau di dalam data
-        const isSuccess = res.status === 'success' || (res.data && res.data.status === 'success');
 
-        if (isSuccess) {
+        if (res.status === 'success') {
             localStorage.removeItem('activeTrxId');
             localStorage.removeItem('activeTrxData');
             
-            // Kirim data lengkap ke fungsi showSuccess
-            const finalData = res.data || res;
-            showSuccess(finalData, id);
+            showSuccess(res, id);
             return true;
         }
-    } catch(e) { console.log("Check error"); }
+    } catch(e) {
+        console.log("Gagal cek otomatis");
+    }
     return false;
-   }
+}
+
+setInterval(() => {
+    const idTrx = localStorage.getItem('activeTrxId');
+    if (idTrx) runCheckStatus(idTrx);
+}, 5000);
 
     async function cekStatusManual() {
         const btn = document.getElementById('btn-cek-manual');
