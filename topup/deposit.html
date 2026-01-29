@@ -139,25 +139,36 @@
     function clearChips() { document.querySelectorAll('.chip-nom').forEach(c => c.classList.remove('active')); }
 
     async function gasDepo() {
-        const n = document.getElementById('nom-input').value;
-        if(n < 2000) return alert("Minimal Rp 2.000 bg");
-        
-        document.getElementById('view-input').style.display = 'none';
-        document.getElementById('view-qr').style.display = 'block';
-        document.getElementById('qr-img-cont').innerHTML = `<i class="fas fa-circle-notch fa-spin" style="color:#7c4dff; font-size:30px; padding:50px"></i>`;
+    const n = document.getElementById('nom-input').value;
+    const userMail = localStorage.getItem('userEmail');
+    
+    if(!userMail) return alert("Silakan login kembali");
+    if(n < 2000) return alert("Minimal Rp 2.000 bg");
+    
+    document.getElementById('view-input').style.display = 'none';
+    document.getElementById('view-qr').style.display = 'block';
+    document.getElementById('qr-img-cont').innerHTML = `<i class="fas fa-circle-notch fa-spin" style="color:#7c4dff; font-size:30px; padding:50px"></i>`;
 
-        try {
-            const req = await fetch(`/api/deposit?nominal=${n}&metode=QRISFAST`);
-            const d = await req.json();
-            if(d.success) {
-                currentTrxId = d.data.id;
-                localStorage.setItem('activeTrxId', currentTrxId);
-                localStorage.setItem('activeTrxData', JSON.stringify(d.data));
-                renderQRView(d.data);
-                startAutoPolling(currentTrxId);
-            }
-        } catch(e) { location.reload(); }
+    try {
+        const req = await fetch(`/api/deposit?nominal=${n}&metode=QRISFAST&email=${userMail}`);
+        const d = await req.json();
+        
+        if(d.success) {
+            currentTrxId = d.data.id;
+            localStorage.setItem('activeTrxId', currentTrxId);
+            localStorage.setItem('activeTrxData', JSON.stringify(d.data));
+            renderQRView(d.data);
+            startAutoPolling(currentTrxId);
+        } else {
+            alert("Gagal membuat QRIS: " + (d.message || "Unknown Error"));
+            location.reload();
+        }
+    } catch(e) { 
+        console.error(e);
+        alert("Koneksi bermasalah");
+        location.reload(); 
     }
+}
 
     function renderQRView(data) {
         document.getElementById('view-input').style.display = 'none';
