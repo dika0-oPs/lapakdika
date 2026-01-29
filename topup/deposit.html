@@ -179,23 +179,23 @@
     async function runCheckStatus(id) {
     try {
         const userMail = localStorage.getItem('userEmail');
+        if (!userMail) return false;
+
         const r = await fetch(`/api/status-deposit?id=${id}&email=${userMail}`);
         const res = await r.json();
 
-        const isSuccess = res.status === 'success' || (res.data && res.data.status === 'success');
-
-        if (isSuccess) {
+        if (res.success === true && (res.message === "BALANCE_UPDATED" || res.message === "ALREADY_PROCESSED")) {
             localStorage.removeItem('activeTrxId');
             localStorage.removeItem('activeTrxData');
 
-            showSuccess(res.data || res, id);
+            showSuccess(res, id);
             return true;
         }
     } catch(e) {
         console.log("Gagal cek otomatis");
     }
     return false;
-}
+    }
 
     async function cekStatusManual() {
         const btn = document.getElementById('btn-cek-manual');
@@ -224,27 +224,32 @@
     }
 
     function showSuccess(res, id) {
-        document.getElementById('s-time').innerText = new Date().toLocaleString('id-ID');
-        document.getElementById('s-email').innerText = userMail;
-        document.getElementById('s-id').innerText = id.toUpperCase();
-        document.getElementById('s-nominal').innerText = `Rp ${parseInt(res.nominal).toLocaleString('id-ID')}`;
-        document.getElementById('s-fee-struk').innerText = `- Rp ${parseInt(res.fee).toLocaleString('id-ID')}`;
-        document.getElementById('s-total').innerText = `Rp ${parseInt(res.added || res.get_balance).toLocaleString('id-ID')}`;
+    document.getElementById('s-time').innerText = new Date().toLocaleString('id-ID');
+    document.getElementById('s-email').innerText = localStorage.getItem('userEmail');
+    document.getElementById('s-id').innerText = id.toUpperCase();
+    
+    const nominal = res.nominal || 0;
+    const added = res.added || 0;
+    const fee = nominal - added;
 
-        setTimeout(() => {
-            html2canvas(document.querySelector("#struk-canvas"), { scale: 3, useCORS: true }).then(canvas => {
-                const imgData = canvas.toDataURL("image/png");
-                document.body.innerHTML = `
-                    <div style="text-align:center; padding:20px; animation: fadeIn 0.6s ease; width:100%; max-width:400px; margin:auto;">
-                        <i class="fas fa-check-circle" style="font-size:60px; color:#4ade80; margin-bottom:15px"></i>
-                        <h2 style="font-weight:800;">Top Up Berhasil!</h2>
-                        <img src="${imgData}" style="width:100%; border-radius:25px; margin: 20px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.4)">
-                        <button class="btn-bayar" onclick="location.href='katalog.html'">Lanjut Belanja</button>
-                    </div>
-                `;
-            });
-        }, 800);
-    }
+    document.getElementById('s-nominal').innerText = `Rp ${parseInt(nominal).toLocaleString('id-ID')}`;
+    document.getElementById('s-fee-struk').innerText = `- Rp ${parseInt(fee).toLocaleString('id-ID')}`;
+    document.getElementById('s-total').innerText = `Rp ${parseInt(added).toLocaleString('id-ID')}`;
+
+    setTimeout(() => {
+        html2canvas(document.querySelector("#struk-canvas"), { scale: 3, useCORS: true }).then(canvas => {
+            const imgData = canvas.toDataURL("image/png");
+            document.body.innerHTML = `
+                <div style="text-align:center; padding:20px; animation: fadeIn 0.6s ease; width:100%; max-width:400px; margin:auto;">
+                    <i class="fas fa-check-circle" style="font-size:60px; color:#4ade80; margin-bottom:15px"></i>
+                    <h2 style="font-weight:800;">Top Up Berhasil!</h2>
+                    <img src="${imgData}" style="width:100%; border-radius:25px; margin: 20px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.4)">
+                    <button class="btn-bayar" onclick="location.href='index.html'">Kembali ke Home</button>
+                </div>
+            `;
+        });
+    }, 800);
+        }
 </script>
 </body>
 </html>
