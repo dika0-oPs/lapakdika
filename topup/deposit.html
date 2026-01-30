@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Up Saldo - Lapak Dika</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --aksen: #7c4dff; --bg: #0b0b0f; --card: rgba(255, 255, 255, 0.05); --border: rgba(255, 255, 255, 0.1); --text-muted: #94a3b8; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; justify-content: center; min-height: 100vh; padding: 20px; }
+        .container { width: 100%; max-width: 400px; }
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+        .back-btn { background: var(--card); border: 1px solid var(--border); color: white; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; }
+        .input-card { background: var(--card); border: 1px solid var(--border); padding: 25px; border-radius: 24px; backdrop-filter: blur(10px); }
+        .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--aksen); font-weight: 800; display: block; margin-bottom: 15px; }
+        input { width: 100%; background: rgba(0,0,0,0.3); border: 2px solid var(--border); padding: 18px; box-sizing: border-box; border-radius: 16px; color: white; font-size: 24px; font-weight: 800; outline: none; text-align: center; margin-bottom: 20px; }
+        .grid-pilih-cepat { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .chip-nom { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 14px; font-size: 14px; font-weight: 700; text-align: center; cursor: pointer; transition: 0.3s; }
+        .chip-nom.active { background: var(--aksen); color: white; border-color: var(--aksen); }
+        .btn-wa { width: 100%; padding: 20px; background: #25d366; border: none; border-radius: 20px; color: white; font-weight: 800; font-size: 16px; margin-top: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 10px 25px rgba(37, 211, 102, 0.3); }
+        .alert-box { background: rgba(124, 77, 255, 0.1); border: 1px solid var(--aksen); padding: 15px; border-radius: 15px; margin-bottom: 20px; font-size: 12px; display: flex; gap: 10px; align-items: center; color: #b091ff; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <button class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+        <h2 style="font-size: 18px; font-weight: 800; margin:0">Top Up Saldo</h2>
+    </div>
+
+    <div class="alert-box">
+        <i class="fas fa-info-circle"></i>
+        <span>Sistem Web sedang maintenance. Silahkan lakukan top up otomatis via WhatsApp.</span>
+    </div>
+
+    <div class="input-card">
+        <span class="section-label">Masukkan Nominal</span>
+        <input type="number" id="nom-input" value="10000" oninput="clearChips()">
+        
+        <span class="section-label">Pilih Cepat</span>
+        <div class="grid-pilih-cepat">
+            <div class="chip-nom" onclick="setN(5000, this)">5.000</div>
+            <div class="chip-nom active" onclick="setN(10000, this)">10.000</div>
+            <div class="chip-nom" onclick="setN(20000, this)">20.000</div>
+            <div class="chip-nom" onclick="setN(50000, this)">50.000</div>
+            <div class="chip-nom" onclick="setN(100000, this)">100.000</div>
+            <div class="chip-nom" onclick="setN(200000, this)">200.000</div>
+        </div>
+    </div>
+    
+    <button class="btn-wa" onclick="orderViaBot()">
+        <i class="fab fa-whatsapp" style="font-size: 22px;"></i> LANJUT KE WHATSAPP
+    </button>
+    
+    <p style="text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 25px; line-height: 1.6;">
+        Setelah klik tombol di atas, Anda akan diarahkan ke WhatsApp.<br>
+        Cukup kirim pesan yang sudah tersedia untuk mendapatkan QRIS.
+    </p>
+</div>
+
+<script>
+    function setN(v, el) { 
+        document.getElementById('nom-input').value = v;
+        document.querySelectorAll('.chip-nom').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    function clearChips() { 
+        document.querySelectorAll('.chip-nom').forEach(c => c.classList.remove('active')); 
+    }
+
+    function orderViaBot() {
+        const nominal = document.getElementById('nom-input').value;
+        const email = localStorage.getItem('userEmail');
+        const botNumber = '6283121495921';
+        
+        if (!email) return alert("Waduh, login dulu ya biar emailnya kebaca!");
+        if (nominal < 2000) return alert("Minimal Top Up Rp 2.000");
+        
+        const pesan = `.deposit ${email} ${nominal}`;
+        const url = `https://wa.me/${botNumber}?text=${encodeURIComponent(pesan)}`;
+        
+        window.open(url, '_blank');
+    }
+</script>
+</body>
+</html>
